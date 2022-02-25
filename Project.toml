@@ -1,0 +1,4 @@
+name = "PlutoD3"
+uuid = "72ee7ba2-92b2-4971-a97d-28f521fe8910"
+authors = ["Guilherme Haetinger <ghaetinger@gmail.com>"]
+version = "0.1.0"
