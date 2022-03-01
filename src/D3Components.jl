@@ -135,7 +135,7 @@ md"## SVG Component Types"
 # ╔═╡ c8ba9d49-25d1-4e52-a372-b4d3e284f769
 begin
   @enum SVGComponent Path Rect Circle
-  Base.show(io::IO,  m::MIME"text/javascript", svg::SVGComponent) = Base.show(io, m, svg |> Symbol |> string |> lowercase |> HypertextLiteral.JavaScript)
+  Base.show(io::IO,  m::MIME"text/javascript", svg::SVGComponent) = Base.show(io, m, svg |> string |> lowercase |> HypertextLiteral.JavaScript)
 end
 
 # ╔═╡ 793e2198-560d-461c-a9c4-40e042eab790
@@ -148,17 +148,30 @@ md"## D3 Attributes"
   animationTime :: Int = 200
 end
 
+# ╔═╡ 7197dde5-968e-4a35-aa15-22ddd82b0cd8
+HypertextLiteral.JavaScript("a")
+
 # ╔═╡ eb38a550-4002-45e7-804f-e3cc895cd4ed
 md"## Line"
+
+# ╔═╡ cabe5322-2772-4234-92b2-3127e2cf2aa0
+md"### Curve Types"
+
+# ╔═╡ 1c24620d-14b4-42d5-8d07-4d438da3aa81
+@enum Curve Cardinal Natural CatmullRom MonotoneX MonotoneY Basis BasisClosed
+
+# ╔═╡ c4cca038-e6f1-462a-b623-d6163d1529bb
+md"### Line structure"
 
 # ╔═╡ 993aeb91-18ce-4a36-87de-fb0387caa8d1
 begin
   struct Line <: D3Component
-    data   :: Vector{NamedTuple{(:x, :y), Tuple{<:Real, <:Real}}}
-	scaleX :: LinearScale
-	scaleY :: LinearScale
+    data         :: Vector{NamedTuple{(:x, :y), Tuple{<:Real, <:Real}}}
+	scaleX       :: LinearScale
+	scaleY       :: LinearScale
 	svgComponent :: SVGComponent
 	d3Attributes :: D3Attributes
+	curveType    :: Curve
   end
 
   Line(x, y;
@@ -166,13 +179,15 @@ begin
         cheight=100,
         offset=0,
         svgComponent=Path,
-        d3Attributes=D3Attributes()
+        d3Attributes=D3Attributes(),
+	    curveType=Natural
   ) = Line(
 	  [(x=x[i], y=y[i]) for i ∈ 1:length(x)],
 	  LinearScale(x, [0, cwidth] .+ offset),
 	  LinearScale(y, [0, cheight] .+ offset),
 	  svgComponent,
-	  d3Attributes
+	  d3Attributes,
+	  curveType
   )
 end
 
@@ -184,23 +199,29 @@ show(io, m, @js_str """
     const path = d3.line()
       .x(d => xScale(d.x))
       .y(d => yScale(d.y))
-      .curve(d3.curveNatural)
+      .curve(d3.$(line.curveType))
 
 	const data = $(line.data);
     s.selectAll(".line-" + id)
 	 .data([data])
      .join("$(line.svgComponent)")
      .transition()
-	 .duration(200)
+	 .duration($(line.d3Attributes.animationTime))
      .attr("d", path)
      .attr("class", "line-" + id)
      $(line.d3Attributes)
 """)
 
+# ╔═╡ 181442f2-5123-4961-948c-7149fd974949
+ Base.show(io::IO,  m::MIME"text/javascript", curve::Curve) = Base.show(io, m, HypertextLiteral.JavaScript("curve" * string(curve)))
+
 # ╔═╡ d544a9cc-4412-4b7d-a223-5bb181b595bb
 Base.show(io::IO, m::MIME"text/javascript", d3attrs::D3Attributes) =
 	Base.show(io, m, 
-		attr_style_to_javascript("attr", d3attrs.attributes)
+		HypertextLiteral.JavaScript(
+			attr_style_to_javascript("attr", d3attrs.attributes).content *
+			attr_style_to_javascript("style", d3attrs.style).content
+		)
 	)
 
 # ╔═╡ 5a9b9cd0-afd9-4d41-9783-5488b0da75f2
@@ -224,7 +245,10 @@ end;
 md"## Paint function"
 
 # ╔═╡ 9cd3619a-d3cd-4bf9-b0cf-c93b25d6ff9e
-function paint(canvas::D3Canvas, components::Vector{<:D3Component})
+function paint(
+	canvas::D3Canvas, components::Vector{<:D3Component};
+	canvasAttributes=D3Attributes()
+)
 @htl """
 <script src="https://cdn.jsdelivr.net/npm/d3@6.2.0/dist/d3.min.js"></script>
 <script id="$(canvas.id)">
@@ -236,6 +260,11 @@ function paint(canvas::D3Canvas, components::Vector{<:D3Component})
 	for (var i = 0; i < comp_foos.length; i++) {
 		comp_foos[i](i);
 	}
+
+    s.transition()
+     .duration($(canvasAttributes.animationTime))
+     $(canvasAttributes)
+
 
 	const output = svg
 	output.s = s
@@ -260,7 +289,7 @@ md"## Example"
 @skip_as_script y = [rand() for _ ∈ 1:100]
 
 # ╔═╡ 06924b38-26df-47fd-98c5-838b623e9039
-canvas = D3Canvas(Dict(), Dict(), 1000, 1000)
+canvas = D3Canvas(Dict(), Dict(), 500, 500)
 
 # ╔═╡ d4bd2b90-9450-4c51-993d-ee0ba75d0167
 paint(canvas, [
@@ -268,15 +297,24 @@ paint(canvas, [
 	cwidth=cwidth,
 	cheight=cheight,
 	d3Attributes=D3Attributes(
-		attributes=Dict("stroke" => "pink", "fill" => "none", "stroke-width" => "2.5")
-	)),
+		attributes=Dict("stroke" => "pink", "fill" => "none", "stroke-width" => "5.5")
+	),
+	curveType=CatmullRom
+	),
 Line(x, y;
 	cwidth=cwidth,
 	cheight=cheight,
 	d3Attributes=D3Attributes(
-		attributes=Dict("stroke" => "black", "fill" => "none")
-))
-])
+		attributes=Dict("stroke" => "black", "fill" => "none", "stroke-width" => "2.5"),
+		animationTime=500
+	))
+];
+
+	canvasAttributes=D3Attributes(style=Dict(
+		"height" => string(cheight),
+		"width" => string(cwidth),
+		"background" => "white"
+	)))
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -537,7 +575,12 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╟─793e2198-560d-461c-a9c4-40e042eab790
 # ╠═c80d5063-aac3-4ee7-994c-eb6394b225eb
 # ╠═d544a9cc-4412-4b7d-a223-5bb181b595bb
+# ╠═7197dde5-968e-4a35-aa15-22ddd82b0cd8
 # ╟─eb38a550-4002-45e7-804f-e3cc895cd4ed
+# ╟─cabe5322-2772-4234-92b2-3127e2cf2aa0
+# ╠═1c24620d-14b4-42d5-8d07-4d438da3aa81
+# ╠═181442f2-5123-4961-948c-7149fd974949
+# ╟─c4cca038-e6f1-462a-b623-d6163d1529bb
 # ╠═993aeb91-18ce-4a36-87de-fb0387caa8d1
 # ╠═fc3b096e-18b3-4536-b20d-753e3ddf7082
 # ╟─5a9b9cd0-afd9-4d41-9783-5488b0da75f2
