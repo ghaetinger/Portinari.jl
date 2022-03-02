@@ -4,16 +4,6 @@
 using Markdown
 using InteractiveUtils
 
-# This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
-macro bind(def, element)
-    quote
-        local iv = try Base.loaded_modules[Base.PkgId(Base.UUID("6e696c72-6542-2067-7265-42206c756150"), "AbstractPlutoDingetjes")].Bonds.initial_value catch; b -> missing; end
-        local el = $(esc(element))
-        global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : iv(el)
-        el
-    end
-end
-
 # ╔═╡ 774bb4f2-963e-11ec-30ff-e3394f52858b
 using HypertextLiteral, PlutoUI, Parameters
 
@@ -29,19 +19,16 @@ end
 # ╔═╡ ee7cc0db-3b79-4099-b566-b673fb3744a8
 macro skip_as_script(ex) skip_as_script(__module__) ? esc(ex) : nothing end
 
+# ╔═╡ 320477a5-77ad-40b3-bccd-37a06c06c22e
+TableOfContents()
+
 # ╔═╡ 68e6b1f4-b0c3-4fbf-905f-454b6bf0cb8f
 md"""
 Need to implement js mime for components and test around to see what works
 """
 
-# ╔═╡ aafd3c10-c0e5-48ab-81e4-b49430c5cc11
-md"# Random things"
-
-# ╔═╡ 52578854-40af-4af7-95e9-06d011615524
-randstring() = String(rand(collect('a':'z'), 10))
-
 # ╔═╡ 09e4ee53-b8b7-4de0-9439-d1bc7bc22578
-md"# JS loose script"
+md"# Javascript Snippet macro"
 
 # ╔═╡ 4d193bff-9ed2-42ba-9cef-4d8c9abc8332
 esc_if_needed(x::String) = x
@@ -65,14 +52,14 @@ end
 
 # ╔═╡ 227f7480-a39d-4692-9874-ff9328e4080a
 begin
-macro js_str(str_expr::Expr)
+macro js(str_expr::Expr)
 	QuoteNode(str_expr)
 	quote
 		result = @htl( $(Expr(:string, "<script>", esc_if_needed.(str_expr.args)..., "</script>")) )
 		RenderWithoutScriptTags(result)
 	end
 end
-macro js_str(str_expr::String)
+macro js(str_expr::String)
 	QuoteNode(str_expr)
 
 	quote
@@ -83,7 +70,10 @@ end
 end
 
 # ╔═╡ e3156da9-8603-41f9-ad41-03eaf79c4540
-md"# D3 Components"
+md"# D3"
+
+# ╔═╡ 793e2198-560d-461c-a9c4-40e042eab790
+md"## D3 Component Attributes"
 
 # ╔═╡ 44721f68-c05e-4d6d-a721-6809a4ab72f8
 attr_style_to_javascript(head::String, ls::Dict{String, String}) = 
@@ -91,129 +81,12 @@ attr_style_to_javascript(head::String, ls::Dict{String, String}) =
 		join([".$head(\"$k\", \"$v\")" for (k, v) ∈ ls], "\n")
 	)
 
-# ╔═╡ 5b83dab0-2c5f-47d1-9a6b-1915c84b9d6c
-abstract type D3Component end
-
-# ╔═╡ 9fc986af-5532-4474-85d6-0d19399237af
-begin
-  struct D3ComponentID
-    id :: String
-  end
-
-  D3ComponentID() = D3ComponentID(randstring())
-end;
-
-# ╔═╡ d23077cf-621f-41c8-a7c7-80b33e6e3c70
-md"## Linear Scale" 
-
-# ╔═╡ 348c15a1-1f65-4827-8d30-f636dff6b9dd
-begin
-  struct LinearScale{T} <: D3Component where T <: Real
-    domain :: Tuple{T, T}
-    range  :: Tuple{T, T}
-  end
-	
-  function LinearScale(values::Vector{T}, range) where T <: Real
-    domain = extrema(values)
-	domain_type = domain |> first |> typeof
-	LinearScale(domain, range |> Tuple .|> domain_type)
-  end
-end;
-
-# ╔═╡ d63f33e2-0892-499c-9dc6-9a017109cc54
-function Base.show(io::IO, m::MIME"text/javascript", linear_scale::LinearScale) 
-show(io, m, @js_str("""
-    return d3.scaleLinear()
-      .domain($([linear_scale.domain...]))
-      .range($([linear_scale.range...]))
-"""))
-end
-
-# ╔═╡ 9099c1e2-aa63-4b87-85f3-408677e7cbad
-md"## SVG Component Types"
-
-# ╔═╡ c8ba9d49-25d1-4e52-a372-b4d3e284f769
-begin
-  @enum SVGComponent Path Rect Circle
-  Base.show(io::IO,  m::MIME"text/javascript", svg::SVGComponent) = Base.show(io, m, svg |> string |> lowercase |> HypertextLiteral.JavaScript)
-end
-
-# ╔═╡ 793e2198-560d-461c-a9c4-40e042eab790
-md"## D3 Attributes"
-
 # ╔═╡ c80d5063-aac3-4ee7-994c-eb6394b225eb
 @with_kw struct D3Attributes
   attributes    :: Dict{String, String} = Dict()
   style         :: Dict{String, String} = Dict()
   animationTime :: Int = 200
 end
-
-# ╔═╡ 7197dde5-968e-4a35-aa15-22ddd82b0cd8
-HypertextLiteral.JavaScript("a")
-
-# ╔═╡ eb38a550-4002-45e7-804f-e3cc895cd4ed
-md"## Line"
-
-# ╔═╡ cabe5322-2772-4234-92b2-3127e2cf2aa0
-md"### Curve Types"
-
-# ╔═╡ 1c24620d-14b4-42d5-8d07-4d438da3aa81
-@enum Curve Cardinal Natural CatmullRom MonotoneX MonotoneY Basis BasisClosed
-
-# ╔═╡ c4cca038-e6f1-462a-b623-d6163d1529bb
-md"### Line structure"
-
-# ╔═╡ 993aeb91-18ce-4a36-87de-fb0387caa8d1
-begin
-  struct Line <: D3Component
-    data         :: Vector{NamedTuple{(:x, :y), Tuple{<:Real, <:Real}}}
-	scaleX       :: LinearScale
-	scaleY       :: LinearScale
-	svgComponent :: SVGComponent
-	d3Attributes :: D3Attributes
-	curveType    :: Curve
-  end
-
-  Line(x, y;
-        cwidth=100,
-        cheight=100,
-        offset=0,
-        svgComponent=Path,
-        d3Attributes=D3Attributes(),
-	    curveType=Natural
-  ) = Line(
-	  [(x=x[i], y=y[i]) for i ∈ 1:length(x)],
-	  LinearScale(x, [0, cwidth] .+ offset),
-	  LinearScale(y, [0, cheight] .+ offset),
-	  svgComponent,
-	  d3Attributes,
-	  curveType
-  )
-end
-
-# ╔═╡ fc3b096e-18b3-4536-b20d-753e3ddf7082
-Base.show(io::IO, m::MIME"text/javascript", line::Line) =
-show(io, m, @js_str """
-    const xScale = $(line.scaleX)();
-    const yScale = $(line.scaleY)();
-    const path = d3.line()
-      .x(d => xScale(d.x))
-      .y(d => yScale(d.y))
-      .curve(d3.$(line.curveType))
-
-	const data = $(line.data);
-    s.selectAll(".line-" + id)
-	 .data([data])
-     .join("$(line.svgComponent)")
-     .transition()
-	 .duration($(line.d3Attributes.animationTime))
-     .attr("d", path)
-     .attr("class", "line-" + id)
-     $(line.d3Attributes)
-""")
-
-# ╔═╡ 181442f2-5123-4961-948c-7149fd974949
- Base.show(io::IO,  m::MIME"text/javascript", curve::Curve) = Base.show(io, m, HypertextLiteral.JavaScript("curve" * string(curve)))
 
 # ╔═╡ d544a9cc-4412-4b7d-a223-5bb181b595bb
 Base.show(io::IO, m::MIME"text/javascript", d3attrs::D3Attributes) =
@@ -224,97 +97,11 @@ Base.show(io::IO, m::MIME"text/javascript", d3attrs::D3Attributes) =
 		)
 	)
 
-# ╔═╡ 5a9b9cd0-afd9-4d41-9783-5488b0da75f2
-md"# D3 Canvas"
+# ╔═╡ b5110c15-0b46-4450-b8d2-9a83f7aeef54
+md"## D3 Component Type"
 
-# ╔═╡ 91f71b8a-c135-4d8c-8e86-c2aeb48ece30
-begin
-  struct D3Canvas
-    attributes    :: Dict{String, String}
-    style         :: Dict{String, String}
-	width 	      :: Int64
-    height        :: Int64
-	id            :: String
-  end
-  function D3Canvas(attrs, style, width, height)
-	  D3Canvas(attrs, style, width, height, randstring())
-  end
-end;
-
-# ╔═╡ 501395c5-81db-493b-8e5c-1fdf8c2d86ab
-md"## Paint function"
-
-# ╔═╡ 9cd3619a-d3cd-4bf9-b0cf-c93b25d6ff9e
-function paint(
-	canvas::D3Canvas, components::Vector{<:D3Component};
-	canvasAttributes=D3Attributes()
-)
-@htl """
-<script src="https://cdn.jsdelivr.net/npm/d3@6.2.0/dist/d3.min.js"></script>
-<script id="$(canvas.id)">
-	const svg = this == null ? DOM.svg($(canvas.width),$(canvas.height)) : this;
-	const s = this == null ? d3.select(svg) : this.s;
-
-	var comp_foos = $components;
-
-	for (var i = 0; i < comp_foos.length; i++) {
-		comp_foos[i](i);
-	}
-
-    s.transition()
-     .duration($(canvasAttributes.animationTime))
-     $(canvasAttributes)
-
-
-	const output = svg
-	output.s = s
-	return output
-</script>
-"""
-end
-
-# ╔═╡ b894890a-dab0-4f39-984d-bd37c93d470b
-md"## Example"
-
-# ╔═╡ ffbc5a8f-dd1b-455c-8005-3589442dab63
-@bind cwidth Slider(100:1000)
-
-# ╔═╡ dcc56a7d-e070-4f4f-a571-1bb7fe981cdd
-@bind cheight Slider(100:1000)
-
-# ╔═╡ fa58813a-abdf-4ca2-965a-6b600fbd85c6
-@skip_as_script x = collect(1:100)
-
-# ╔═╡ dcdd477b-729c-4e34-9da8-19d702ee7920
-@skip_as_script y = [rand() for _ ∈ 1:100]
-
-# ╔═╡ 06924b38-26df-47fd-98c5-838b623e9039
-canvas = D3Canvas(Dict(), Dict(), 500, 500)
-
-# ╔═╡ d4bd2b90-9450-4c51-993d-ee0ba75d0167
-paint(canvas, [
-	Line(x, y;
-	cwidth=cwidth,
-	cheight=cheight,
-	d3Attributes=D3Attributes(
-		attributes=Dict("stroke" => "pink", "fill" => "none", "stroke-width" => "5.5")
-	),
-	curveType=CatmullRom
-	),
-Line(x, y;
-	cwidth=cwidth,
-	cheight=cheight,
-	d3Attributes=D3Attributes(
-		attributes=Dict("stroke" => "black", "fill" => "none", "stroke-width" => "2.5"),
-		animationTime=500
-	))
-];
-
-	canvasAttributes=D3Attributes(style=Dict(
-		"height" => string(cheight),
-		"width" => string(cwidth),
-		"background" => "white"
-	)))
+# ╔═╡ c06a51f5-224a-4ffa-87a7-d5f39a1a4bb5
+abstract type D3Component end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -555,44 +342,19 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╟─0c520e27-04d5-47ff-814c-51c9dedd77e3
 # ╟─ee7cc0db-3b79-4099-b566-b673fb3744a8
 # ╠═774bb4f2-963e-11ec-30ff-e3394f52858b
+# ╟─320477a5-77ad-40b3-bccd-37a06c06c22e
 # ╠═68e6b1f4-b0c3-4fbf-905f-454b6bf0cb8f
-# ╟─aafd3c10-c0e5-48ab-81e4-b49430c5cc11
-# ╟─52578854-40af-4af7-95e9-06d011615524
 # ╟─09e4ee53-b8b7-4de0-9439-d1bc7bc22578
 # ╠═4d193bff-9ed2-42ba-9cef-4d8c9abc8332
 # ╠═c9458743-0471-430e-b7a5-e26a2ccb5811
 # ╠═279012f1-b67a-4fac-a169-34dbe47e4638
 # ╠═227f7480-a39d-4692-9874-ff9328e4080a
 # ╟─e3156da9-8603-41f9-ad41-03eaf79c4540
-# ╠═44721f68-c05e-4d6d-a721-6809a4ab72f8
-# ╠═5b83dab0-2c5f-47d1-9a6b-1915c84b9d6c
-# ╠═9fc986af-5532-4474-85d6-0d19399237af
-# ╟─d23077cf-621f-41c8-a7c7-80b33e6e3c70
-# ╠═348c15a1-1f65-4827-8d30-f636dff6b9dd
-# ╠═d63f33e2-0892-499c-9dc6-9a017109cc54
-# ╟─9099c1e2-aa63-4b87-85f3-408677e7cbad
-# ╠═c8ba9d49-25d1-4e52-a372-b4d3e284f769
 # ╟─793e2198-560d-461c-a9c4-40e042eab790
+# ╠═44721f68-c05e-4d6d-a721-6809a4ab72f8
 # ╠═c80d5063-aac3-4ee7-994c-eb6394b225eb
 # ╠═d544a9cc-4412-4b7d-a223-5bb181b595bb
-# ╠═7197dde5-968e-4a35-aa15-22ddd82b0cd8
-# ╟─eb38a550-4002-45e7-804f-e3cc895cd4ed
-# ╟─cabe5322-2772-4234-92b2-3127e2cf2aa0
-# ╠═1c24620d-14b4-42d5-8d07-4d438da3aa81
-# ╠═181442f2-5123-4961-948c-7149fd974949
-# ╟─c4cca038-e6f1-462a-b623-d6163d1529bb
-# ╠═993aeb91-18ce-4a36-87de-fb0387caa8d1
-# ╠═fc3b096e-18b3-4536-b20d-753e3ddf7082
-# ╟─5a9b9cd0-afd9-4d41-9783-5488b0da75f2
-# ╠═91f71b8a-c135-4d8c-8e86-c2aeb48ece30
-# ╟─501395c5-81db-493b-8e5c-1fdf8c2d86ab
-# ╠═9cd3619a-d3cd-4bf9-b0cf-c93b25d6ff9e
-# ╟─b894890a-dab0-4f39-984d-bd37c93d470b
-# ╠═ffbc5a8f-dd1b-455c-8005-3589442dab63
-# ╠═dcc56a7d-e070-4f4f-a571-1bb7fe981cdd
-# ╠═fa58813a-abdf-4ca2-965a-6b600fbd85c6
-# ╠═dcdd477b-729c-4e34-9da8-19d702ee7920
-# ╠═d4bd2b90-9450-4c51-993d-ee0ba75d0167
-# ╠═06924b38-26df-47fd-98c5-838b623e9039
+# ╟─b5110c15-0b46-4450-b8d2-9a83f7aeef54
+# ╠═c06a51f5-224a-4ffa-87a7-d5f39a1a4bb5
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
