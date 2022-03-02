@@ -23,7 +23,7 @@ begin
 end
 
 # ╔═╡ 033d82ef-fd56-46e9-8199-c0222614c341
-x = collect(1:6)
+x = collect(1:10)
 
 # ╔═╡ 2c7f409d-f52b-427f-a06f-7c3d0935aa54
 y = [rand() for _ ∈ x]
@@ -42,24 +42,29 @@ canvas = D3Canvas([
 	offset = round(Int64, min(w, h) / 10),
 	d3Attributes=D3Attributes(;
 		attributes=Dict(
-			"fill" => "none",
+			"fill" => "green",
 			"stroke" => "gold",
-			"stroke-width" => "10.0"
+			"stroke-width" => "7.0"
 		)
 	),
 	curveType=PlutoD3.BasisClosed
 	),
-	Line(x, y; 
+	Area(x, y, y .* 2; 
 	cwidth = w,
 	cheight = h,
 	offset =round(Int64, min(w, h) / 10),
 	d3Attributes=D3Attributes(;
 		attributes=Dict(
-			"fill" => "none",
-			"stroke" => "white",
+			"fill" => "rgba(0, 0, 255, 0.4)",
+			"stroke" => "none",
 			"stroke-width" => "1.0"
+		),
+		style=Dict(
+			"filter" => "blur(1px)"
 		)
-	))
+	),
+		curveType=PlutoD3.Basis
+	)
 ], "abc"; d3Attributes=D3Attributes(;
 		attributes=Dict(
 			"viewBox" => "0 0 $w $h"
