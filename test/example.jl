@@ -60,7 +60,7 @@ canvas = D3Canvas([
 			"stroke-width" => "1.0"
 		),
 		style=Dict(
-			"filter" => "blur(1px)"
+			"filter" => "blur(5px)"
 		)
 	),
 		curveType=PlutoD3.Basis
@@ -75,9 +75,6 @@ canvas = D3Canvas([
 		)
 	))
 
-# ╔═╡ 37b63783-56d8-4176-beb2-799240370f33
-canvas
-
 # ╔═╡ e2a61f90-9a47-4f59-8c6c-f3cff087fa4e
 const Layout = PlutoUI.ExperimentalLayout
 
@@ -87,6 +84,5 @@ const Layout = PlutoUI.ExperimentalLayout
 # ╠═2c7f409d-f52b-427f-a06f-7c3d0935aa54
 # ╠═0652b983-8fb1-4c1c-99ac-fddddd26ec76
 # ╠═10159f1a-d5a8-4cf4-986b-2666e711df80
-# ╠═37b63783-56d8-4176-beb2-799240370f33
 # ╠═9de66973-ea7d-4df9-9b32-cd87c475d28c
 # ╠═e2a61f90-9a47-4f59-8c6c-f3cff087fa4e

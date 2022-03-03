@@ -1,16 +1,18 @@
 module PlutoD3
 
-export Area, D3Canvas, Line, LineScale, D3Attributes
+using Reexport
 
-module D3
+export Area, D3Attributes, D3Component, D3Canvas, Line, LinearScale, @js
+
+@reexport module D3
     include("./d3_abstractions.jl")
+
+    export @js, D3Attributes, D3Component
 end
 
 include("./linear_scale.jl")
 include("./line.jl")
 include("./area.jl")
 include("./canvas.jl")
-
-const D3Attributes = D3.D3Attributes
 
 end # module
