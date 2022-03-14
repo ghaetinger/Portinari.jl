@@ -5,27 +5,10 @@ using Markdown
 using InteractiveUtils
 
 # ╔═╡ 774bb4f2-963e-11ec-30ff-e3394f52858b
-using HypertextLiteral, PlutoUI, Parameters
-
-# ╔═╡ 0c520e27-04d5-47ff-814c-51c9dedd77e3
-function skip_as_script(m::Module)
-	if isdefined(m, :PlutoForceDisplay)
-		return m.PlutoForceDisplay
-	else
-		isdefined(m, :PlutoRunner) && parentmodule(m) == Main
-	end
-end
-
-# ╔═╡ ee7cc0db-3b79-4099-b566-b673fb3744a8
-macro skip_as_script(ex) skip_as_script(__module__) ? esc(ex) : nothing end
+using HypertextLiteral, PlutoUI, Parameters, PlutoDevMacros
 
 # ╔═╡ 320477a5-77ad-40b3-bccd-37a06c06c22e
-TableOfContents()
-
-# ╔═╡ 68e6b1f4-b0c3-4fbf-905f-454b6bf0cb8f
-md"""
-Need to implement js mime for components and test around to see what works
-"""
+@only_in_nb TableOfContents()
 
 # ╔═╡ 09e4ee53-b8b7-4de0-9439-d1bc7bc22578
 md"# Javascript Snippet macro"
@@ -108,11 +91,13 @@ PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 HypertextLiteral = "ac1192a8-f4b3-4bfe-ba22-af5b92cd3ab2"
 Parameters = "d96e819e-fc66-5662-9728-84c9c7592b0a"
+PlutoDevMacros = "a0499f29-c39b-4c5c-807c-88074221b949"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 
 [compat]
 HypertextLiteral = "~0.9.3"
 Parameters = "~0.12.3"
+PlutoDevMacros = "~0.4.5"
 PlutoUI = "~0.7.35"
 """
 
@@ -120,7 +105,7 @@ PlutoUI = "~0.7.35"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.7.2"
+julia_version = "1.7.1"
 manifest_format = "2.0"
 
 [[deps.AbstractPlutoDingetjes]]
@@ -215,6 +200,12 @@ uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 [[deps.Logging]]
 uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
 
+[[deps.MacroTools]]
+deps = ["Markdown", "Random"]
+git-tree-sha1 = "3d3e902b31198a27340d0bf00d6ac452866021cf"
+uuid = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
+version = "0.5.9"
+
 [[deps.Markdown]]
 deps = ["Base64"]
 uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
@@ -257,6 +248,12 @@ version = "2.2.2"
 deps = ["Artifacts", "Dates", "Downloads", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "Serialization", "TOML", "Tar", "UUIDs", "p7zip_jll"]
 uuid = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 
+[[deps.PlutoDevMacros]]
+deps = ["MacroTools", "Requires"]
+git-tree-sha1 = "994167def8f46d3be21783a76705228430e29632"
+uuid = "a0499f29-c39b-4c5c-807c-88074221b949"
+version = "0.4.5"
+
 [[deps.PlutoUI]]
 deps = ["AbstractPlutoDingetjes", "Base64", "ColorTypes", "Dates", "Hyperscript", "HypertextLiteral", "IOCapture", "InteractiveUtils", "JSON", "Logging", "Markdown", "Random", "Reexport", "UUIDs"]
 git-tree-sha1 = "85bf3e4bd279e405f91489ce518dedb1e32119cb"
@@ -279,6 +276,12 @@ uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 git-tree-sha1 = "45e428421666073eab6f2da5c9d310d99bb12f9b"
 uuid = "189a3867-3050-52da-a836-e630ba90ab69"
 version = "1.2.2"
+
+[[deps.Requires]]
+deps = ["UUIDs"]
+git-tree-sha1 = "838a3a4188e2ded87a4f9f184b4b0d78a1e91cb7"
+uuid = "ae029012-a4dd-5104-9daa-d747884805df"
+version = "1.3.0"
 
 [[deps.SHA]]
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
@@ -339,11 +342,8 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 """
 
 # ╔═╡ Cell order:
-# ╟─0c520e27-04d5-47ff-814c-51c9dedd77e3
-# ╟─ee7cc0db-3b79-4099-b566-b673fb3744a8
 # ╠═774bb4f2-963e-11ec-30ff-e3394f52858b
 # ╟─320477a5-77ad-40b3-bccd-37a06c06c22e
-# ╠═68e6b1f4-b0c3-4fbf-905f-454b6bf0cb8f
 # ╟─09e4ee53-b8b7-4de0-9439-d1bc7bc22578
 # ╠═4d193bff-9ed2-42ba-9cef-4d8c9abc8332
 # ╠═c9458743-0471-430e-b7a5-e26a2ccb5811

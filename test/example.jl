@@ -23,7 +23,7 @@ begin
 end
 
 # ╔═╡ 033d82ef-fd56-46e9-8199-c0222614c341
-x = collect(1:100)
+x = collect(1:20)
 
 # ╔═╡ 2c7f409d-f52b-427f-a06f-7c3d0935aa54
 y = [rand() for _ ∈ x]
@@ -42,12 +42,13 @@ canvas = D3Canvas([
 	offset = round(Int64, min(w, h) / 10),
 	d3Attributes=D3Attributes(;
 		attributes=Dict(
-			"fill" => "green",
+			"fill" => "none",
 			"stroke" => "gold",
 			"stroke-width" => "7.0"
-		)
+		),
+		animationTime=1000
 	),
-	curveType=PlutoD3.BasisClosed
+	curveType=PlutoD3.CatmullRom,
 	),
 	Area(x, y, y .* 1.2; 
 	cwidth = w,
@@ -60,7 +61,7 @@ canvas = D3Canvas([
 			"stroke-width" => "1.0"
 		),
 		style=Dict(
-			"filter" => "blur(2px)"
+			"filter" => "blur(0px)"
 		)
 	),
 		curveType=PlutoD3.Basis
@@ -82,8 +83,7 @@ canvas = D3Canvas([
 		curveType=PlutoD3.Basis
 	),
 	LinearScale(y, h, round(Int64, min(w, h) / 10); show=true, dir=PlutoD3.Right),
-	LinearScale(x, w, round(Int64, min(w, h) / 10); show=true, dir=PlutoD3.Top,
-		pos=(x=0, y=h-round(Int64, min(w, h) / 10)))
+	LinearScale(x, w, round(Int64, min(w, h) / 10); show=true, dir=PlutoD3.Bottom)
 ], "abc"; d3Attributes=D3Attributes(;
 		attributes=Dict(
 			"viewBox" => "0 0 $w $h"
@@ -92,10 +92,64 @@ canvas = D3Canvas([
 			"width" => "$(w)px",
 			"height" => "$(h)px",
 		)
-	))
+))
+
+# ╔═╡ 927549cf-865b-41cc-ac14-76f95275e3b3
+canvas2 = D3Canvas([
+	Area(x, y, y .* 1.2; 
+	cwidth = w,
+	cheight = h,
+	offset =round(Int64, min(w, h) / 10),
+	d3Attributes=D3Attributes(;
+		attributes=Dict(
+			"fill" => "rgba(255, 0, 0, 0.8)",
+			"stroke" => "none",
+			"stroke-width" => "1.0"
+		),
+		style=Dict(
+			"filter" => "blur(0px)"
+		)
+	),
+		curveType=PlutoD3.Basis
+	),
+		Area(x, y .* 1.2, y; 
+	cwidth = w,
+	cheight = h,
+	offset =round(Int64, min(w, h) / 10),
+	d3Attributes=D3Attributes(;
+		attributes=Dict(
+			"fill" => "rgba(100, 150, 255, 0.8)",
+			"stroke" => "none",
+			"stroke-width" => "1.0"
+		),
+		style=Dict(
+			"filter" => "blur(20px)"
+		)
+	),
+		curveType=PlutoD3.Basis
+		),
+	LinearScale(x, w, round(Int64, min(w, h) / 10); show=true, dir=PlutoD3.Bottom)
+], "abcdef"; d3Attributes=D3Attributes(;
+		attributes=Dict(
+			"viewBox" => "0 0 $w $h"
+		),
+		style=Dict(
+			"width" => "$(w)px",
+			"height" => "$(h)px",
+		)
+))
 
 # ╔═╡ 1a245013-ff53-41f2-9612-441f1304d8ba
-canvas
+@htl("""
+<div>
+$canvas
+<br>
+$canvas2
+</div>
+""")
+
+# ╔═╡ cdfd5d8b-ecc8-4505-af6f-cd12ed5b69dc
+
 
 # ╔═╡ e2a61f90-9a47-4f59-8c6c-f3cff087fa4e
 const Layout = PlutoUI.ExperimentalLayout
@@ -108,4 +162,6 @@ const Layout = PlutoUI.ExperimentalLayout
 # ╠═10159f1a-d5a8-4cf4-986b-2666e711df80
 # ╠═1a245013-ff53-41f2-9612-441f1304d8ba
 # ╠═9de66973-ea7d-4df9-9b32-cd87c475d28c
+# ╠═927549cf-865b-41cc-ac14-76f95275e3b3
+# ╠═cdfd5d8b-ecc8-4505-af6f-cd12ed5b69dc
 # ╠═e2a61f90-9a47-4f59-8c6c-f3cff087fa4e
