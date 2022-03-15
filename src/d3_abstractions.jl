@@ -28,7 +28,7 @@ begin
 	function Base.show(io::IO, m::MIME"text/javascript", r::RenderWithoutScriptTags)
 		full_result = repr(MIME"text/html"(), r.x; context=io)
 		write(io, 
-			"((id=0) => {" * full_result[1+length("<script>"):end-length("</script>")] * "})"
+			"((id=0, span=undefined) => {" * full_result[1+length("<script>"):end-length("</script>")] * "})"
 		)
 	end
 end
@@ -64,17 +64,38 @@ attr_style_to_javascript(head::String, ls::Dict{String, String}) =
 		join([".$head(\"$k\", \"$v\")" for (k, v) ∈ ls], "\n")
 	)
 
+# ╔═╡ 53493b6d-9677-4683-a19a-9a4879b76f00
+events_to_javascript(ls::Vector{String}) =
+	HypertextLiteral.JavaScript(
+		join([""".on("$event", (function(e, d) {
+			const key = id + "-" + "$event";
+			const count = span.value[key] == undefined ? 0 : span.value[key].count;
+			span.value[key] = {'count': count + 1, 'data': d};
+			span.dispatchEvent(new CustomEvent("input"))
+		}))""" for event ∈ ls], "\n")
+	)
+
+# ╔═╡ 838314e4-a125-4578-9c68-400610133912
+animation_to_javascript(animationTime::Int) =
+	HypertextLiteral.JavaScript("""
+		.transition()
+		.duration($animationTime)
+	""")
+
 # ╔═╡ c80d5063-aac3-4ee7-994c-eb6394b225eb
 @with_kw struct D3Attributes
   attributes    :: Dict{String, String} = Dict()
   style         :: Dict{String, String} = Dict()
   animationTime :: Int = 200
+  events        :: Vector{String} = []
 end
 
 # ╔═╡ d544a9cc-4412-4b7d-a223-5bb181b595bb
 Base.show(io::IO, m::MIME"text/javascript", d3attrs::D3Attributes) =
 	Base.show(io, m, 
 		HypertextLiteral.JavaScript(
+			events_to_javascript(d3attrs.events).content *
+			animation_to_javascript(d3attrs.animationTime).content *
 			attr_style_to_javascript("attr", d3attrs.attributes).content *
 			attr_style_to_javascript("style", d3attrs.style).content
 		)
@@ -352,6 +373,8 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╟─e3156da9-8603-41f9-ad41-03eaf79c4540
 # ╟─793e2198-560d-461c-a9c4-40e042eab790
 # ╠═44721f68-c05e-4d6d-a721-6809a4ab72f8
+# ╠═53493b6d-9677-4683-a19a-9a4879b76f00
+# ╠═838314e4-a125-4578-9c68-400610133912
 # ╠═c80d5063-aac3-4ee7-994c-eb6394b225eb
 # ╠═d544a9cc-4412-4b7d-a223-5bb181b595bb
 # ╟─b5110c15-0b46-4450-b8d2-9a83f7aeef54

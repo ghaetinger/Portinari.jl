@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.18.2
+# v0.18.4
 
 using Markdown
 using InteractiveUtils
@@ -39,10 +39,10 @@ x = collect(1:50);
 y = [rand() for _ ∈ x];
 
 # ╔═╡ dc81bcdd-df79-4f23-82fc-6efefc299d46
-size = [rand() * 100 for _ ∈ x];
+size = [rand() * 1000 for _ ∈ x];
 
 # ╔═╡ 74185d5a-4c10-4570-a99d-44b7bed8afae
-D3Canvas([
+@bind events D3Canvas([
 		Line(x, y;
 			cwidth=param.width,
 			cheight=param.height,
@@ -61,9 +61,10 @@ D3Canvas([
 		    offset = 50,
 			d3Attributes=D3Attributes(;
 				attributes=Dict(
-				"fill" => "none",
+				"fill" => "green",
 				"stroke" => "black"
-				)
+				),
+				events=["mouseover"]
 			)
 		)
 	], 
@@ -74,10 +75,22 @@ D3Canvas([
 	)
 )
 
+# ╔═╡ 9a8d0b79-33b4-48d7-8e93-77b94e360a48
+!ismissing(events) && haskey(events, "1-mouseover") ? md"""
+## Report
+
+X: $(events["1-mouseover"]["data"]["x"])
+
+Y: $(events["1-mouseover"]["data"]["y"])
+
+Value: $(events["1-mouseover"]["data"]["size"])
+""" : md""
+
 # ╔═╡ Cell order:
 # ╠═a766285c-9b11-11ec-0609-1b79637175d3
 # ╟─39bd54a5-6f73-43ff-b5ec-90551642741d
 # ╠═cc8b977d-079a-4124-b9e2-c3d329cc2cd5
 # ╠═8b7a8f64-05b2-422b-8ec5-52da5d8acb68
 # ╠═dc81bcdd-df79-4f23-82fc-6efefc299d46
+# ╟─9a8d0b79-33b4-48d7-8e93-77b94e360a48
 # ╠═74185d5a-4c10-4570-a99d-44b7bed8afae

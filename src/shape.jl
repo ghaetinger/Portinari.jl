@@ -70,12 +70,10 @@ function Base.show(io::IO, m::MIME"text/javascript", shape::Shape)
     	s.selectAll(".shape-" + id)
 	     .data(data)
      	 .join("path")
-     	 .transition()
-	 	 .duration($(shape.d3Attributes.animationTime))
+     	 $(shape.d3Attributes)
 		 .attr("transform", d => "translate(" + xScale(d.x) + "," + yScale(d.y) + ")")
 	     .attr("d", symbol)
      	 .attr("class", "shape-" + id)
-     	 $(shape.d3Attributes)
 	"""
 	)
 end

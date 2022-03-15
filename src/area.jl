@@ -71,11 +71,9 @@ Base.show(io::IO, m::MIME"text/javascript", area::Area) =
     	s.selectAll(".line-" + id)
 	     .data([data])
      	 .join("path")
-     	 .transition()
-	 	 .duration($(area.d3Attributes.animationTime))
+     	 $(area.d3Attributes)
      	 .attr("d", path)
      	 .attr("class", "line-" + id)
-     	 $(area.d3Attributes)
 	""")
 
 # ╔═╡ c9bed508-ea77-4ae4-8876-ac2a5ec62114

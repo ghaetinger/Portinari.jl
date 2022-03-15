@@ -44,25 +44,31 @@ md"## Javascript Snippet"
 # ╔═╡ 61c3a0c2-5a4e-4114-a57f-099cfe05f7fd
 Base.show(io::IO, m::MIME"text/html", canvas::D3Canvas) =
 	Base.show(io, m, @htl("""
+<span>
 <script src="https://cdn.jsdelivr.net/npm/d3@6.2.0/dist/d3.min.js"></script>
 <script id="canvas-$(canvas.id)">
+    const span = currentScript.parentElement;
+	console.log(span)
 	const svg = this == null ? DOM.svg($(canvas.initWidth),$(canvas.initHeight)) : this;
 	const s = this == null ? d3.select(svg) : this.s;
 
 	var comp_foos = $(canvas.components);
 
 	for (var i = 0; i < comp_foos.length; i++) {
-		comp_foos[i](i);
+		comp_foos[i](i, span);
 	}
 
+	const id = "canvas"; 
     s.transition()
      .duration($(canvas.d3Attributes.animationTime))
      $(canvas.d3Attributes)
 
+	span.value = {};
 	const output = svg
 	output.s = s
 	return output
 </script>
+</span>
 """))
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001

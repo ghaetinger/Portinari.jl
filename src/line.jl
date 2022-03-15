@@ -4,6 +4,16 @@
 using Markdown
 using InteractiveUtils
 
+# This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
+macro bind(def, element)
+    quote
+        local iv = try Base.loaded_modules[Base.PkgId(Base.UUID("6e696c72-6542-2067-7265-42206c756150"), "AbstractPlutoDingetjes")].Bonds.initial_value catch; b -> missing; end
+        local el = $(esc(element))
+        global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : iv(el)
+        el
+    end
+end
+
 # ╔═╡ 8bbbffda-f8ed-4d4a-b56b-dd0e1327e4da
 using AbstractPlutoDingetjes, HypertextLiteral, Parameters, PlutoUI, PlutoDevMacros
 
@@ -70,11 +80,9 @@ Base.show(io::IO, m::MIME"text/javascript", line::Line) =
     	s.selectAll(".line-" + id)
 	     .data([data])
      	 .join("path")
-     	 .transition()
-	 	 .duration($(line.d3Attributes.animationTime))
+     	 $(line.d3Attributes)
      	 .attr("d", path)
      	 .attr("class", "line-" + id)
-     	 $(line.d3Attributes)
 	""")
 
 # ╔═╡ a8697379-6c24-4357-909c-42d2e92798a5
@@ -90,7 +98,23 @@ md"# Example"
 @only_in_nb y = [rand() for _ ∈ x]
 
 # ╔═╡ 1a2da5d5-5908-4abd-a7bb-1fa3da814cee
-@only_in_nb D3Canvas([Line(x, y;
+@only_in_nb @bind hoveraction D3Canvas([
+	
+	Line(x, y;
+    cwidth=300,
+	cheight=300,
+	offset=50,
+	d3Attributes=D3Attributes(;
+		attributes=Dict(
+			"fill" => "none",
+			"stroke" => "red",
+			"stroke-width" => "15.0"
+		),
+		events=["mouseover"]
+	),
+	curveType=BasisClosed
+)
+	Line(x, y;
     cwidth=300,
 	cheight=300,
 	offset=50,
@@ -99,10 +123,12 @@ md"# Example"
 			"fill" => "none",
 			"stroke" => "gold",
 			"stroke-width" => "5.0"
-		)
+		),
+		events=["mouseover"]
 	),
 	curveType=BasisClosed
-)], "line_example";
+)
+], "line_example";
 	d3Attributes=D3Attributes(;
 		attributes=Dict(
 			"viewBox" => "0 0 300 300"
@@ -112,6 +138,23 @@ md"# Example"
 			"height" => "300"
 		)
 ))
+
+# ╔═╡ cde1711a-6425-4c6a-b20e-6084dce044e8
+@only_in_nb begin
+	if hoveraction |> keys |> isempty
+		md"# 😐"
+	elseif !haskey(hoveraction, "1-mouseover")
+		if hoveraction["0-mouseover"]["count"] > 10
+			md"# 😀"
+		else
+			md"# 😊"
+		end
+	elseif hoveraction["1-mouseover"]["count"] > 10
+		md"# 😭"
+	else
+		md"# 😥"
+	end
+end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -386,6 +429,7 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╟─ba53d4cc-b096-4fb8-86f3-ee8648c10cea
 # ╠═0b664967-afb7-4b6f-904d-0ebcc43e1b00
 # ╠═99fdeb31-01b8-4be5-bb42-fcc4f2da91ef
+# ╠═cde1711a-6425-4c6a-b20e-6084dce044e8
 # ╠═1a2da5d5-5908-4abd-a7bb-1fa3da814cee
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
