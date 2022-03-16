@@ -1,6 +1,6 @@
-# PlutoD3.jl
+# Portinari.jl
 
-A Julian abstraction for D3 to be run inside of Pluto! Still in its early stages.
+A Julian abstraction for D3 to be run inside of Pluto (Jupyter and Franklin still to be tested)! Still in its early stages.
 
 ## Small demo
 

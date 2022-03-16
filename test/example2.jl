@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.18.1
+# v0.18.2
 
 using Markdown
 using InteractiveUtils
@@ -19,7 +19,7 @@ begin
 	using Pkg
 	using Revise
 	Pkg.activate(Base.current_project(@__DIR__))
-	using PlutoD3, PlutoUI, HypertextLiteral
+	using Portinari, PlutoUI, HypertextLiteral
 end
 
 # ╔═╡ 39bd54a5-6f73-43ff-b5ec-90551642741d
