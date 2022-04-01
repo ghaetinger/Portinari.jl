@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.18.2
+# v0.18.4
 
 using Markdown
 using InteractiveUtils
@@ -61,51 +61,26 @@ end
 # ╔═╡ e3156da9-8603-41f9-ad41-03eaf79c4540
 md"# D3"
 
-# ╔═╡ 793e2198-560d-461c-a9c4-40e042eab790
-md"## D3 Component Attributes"
+# ╔═╡ b5110c15-0b46-4450-b8d2-9a83f7aeef54
+md"## D3 Component Type"
 
-# ╔═╡ 44721f68-c05e-4d6d-a721-6809a4ab72f8
-attr_style_to_javascript(head::String, ls::Dict{String, String}) = 
-	HypertextLiteral.JavaScript(
-		join([".$head(\"$k\", \"$v\")" for (k, v) ∈ ls], "\n")
-	)
+# ╔═╡ c06a51f5-224a-4ffa-87a7-d5f39a1a4bb5
+abstract type D3Component end
 
-# ╔═╡ 53493b6d-9677-4683-a19a-9a4879b76f00
-events_to_javascript(ls::Vector{String}) =
-	HypertextLiteral.JavaScript(
-		join([""".on("$event", (function(e, d) {
-			const key = "$event";
-			const count = span.value[key] == undefined ? 0 : span.value[key].count;
-			span.value[key] = {'count': count + 1, 'data': d};
-			span.dispatchEvent(new CustomEvent("input"));
-		}))""" for event ∈ ls], "\n")
-	)
+# ╔═╡ 37f3557c-0d82-464d-9f36-847eceebaae6
+Base.extrema(component::D3Component) =
+	error("Extrema not implemented for type $(typeof(component))")
 
-# ╔═╡ 838314e4-a125-4578-9c68-400610133912
-animation_to_javascript(animationTime::Int) =
-	HypertextLiteral.JavaScript("""
-		.transition()
-		.duration(disallow_animation ? 0 : $animationTime)
-	""")
+# ╔═╡ d8c59da2-5a98-4321-89f2-4766d9ad14c6
+md"## D3 Attributes"
 
 # ╔═╡ c80d5063-aac3-4ee7-994c-eb6394b225eb
-@with_kw struct D3Attributes
-  attributes    :: Dict{String, String} = Dict()
-  style         :: Dict{String, String} = Dict()
-  animationTime :: Int = 200
-  events        :: Vector{String} = []
+@with_kw struct D3Attr
+  attr     :: NamedTuple = (;)
+  style    :: NamedTuple = (;)
+  duration :: Int = 200
+  events   :: Vector{<:AbstractString} = String[]
 end
-
-# ╔═╡ d544a9cc-4412-4b7d-a223-5bb181b595bb
-Base.show(io::IO, m::MIME"text/javascript", d3attrs::D3Attributes) =
-	Base.show(io, m, 
-		HypertextLiteral.JavaScript(
-			events_to_javascript(d3attrs.events).content *
-			animation_to_javascript(d3attrs.animationTime).content *
-			attr_style_to_javascript("attr", d3attrs.attributes).content *
-			attr_style_to_javascript("style", d3attrs.style).content
-		)
-	)
 
 # ╔═╡ 8803b1d9-a29c-4b4c-b5bc-93a78561a70f
 begin
@@ -118,15 +93,61 @@ begin
 	better_publish_to_js(x) = PublishToJS(x)
 end
 
-# ╔═╡ b5110c15-0b46-4450-b8d2-9a83f7aeef54
-md"## D3 Component Type"
+# ╔═╡ 813d7b17-a806-4d9e-95ed-e095a43a8291
+to_named_tuple(attr::D3Attr) = (attr=attr.attr, style=attr.style, duration=attr.duration, events=attr.events)
 
-# ╔═╡ c06a51f5-224a-4ffa-87a7-d5f39a1a4bb5
-abstract type D3Component end
+# ╔═╡ b6aac451-9e02-4a42-8be3-0f0521bedbed
+@htl("""<h1 style="color: red"> REMOVE </h1>""")
 
-# ╔═╡ 37f3557c-0d82-464d-9f36-847eceebaae6
-Base.extrema(component::D3Component) =
-	error("Extrema not implemented for type $(typeof(component))")
+# ╔═╡ 793e2198-560d-461c-a9c4-40e042eab790
+md"## D3 Component Attributes"
+
+# ╔═╡ 44721f68-c05e-4d6d-a721-6809a4ab72f8
+# ╠═╡ disabled = true
+#=╠═╡
+attr_style_to_javascript(head::String, ls::Dict{String, String}) = 
+	HypertextLiteral.JavaScript(
+		join([".$head(\"$k\", \"$v\")" for (k, v) ∈ ls], "\n")
+	)
+  ╠═╡ =#
+
+# ╔═╡ 53493b6d-9677-4683-a19a-9a4879b76f00
+# ╠═╡ disabled = true
+#=╠═╡
+events_to_javascript(ls::Vector{String}) =
+	HypertextLiteral.JavaScript(
+		join([""".on("$event", (function(e, d) {
+			const key = "$event";
+			const count = span.value[key] == undefined ? 0 : span.value[key].count;
+			span.value[key] = {'count': count + 1, 'data': d};
+			span.dispatchEvent(new CustomEvent("input"));
+		}))""" for event ∈ ls], "\n")
+	)
+  ╠═╡ =#
+
+# ╔═╡ 838314e4-a125-4578-9c68-400610133912
+# ╠═╡ disabled = true
+#=╠═╡
+animation_to_javascript(animationTime::Int) =
+	HypertextLiteral.JavaScript("""
+		.transition()
+		.duration(disallow_animation ? 0 : $animationTime)
+	""")
+  ╠═╡ =#
+
+# ╔═╡ d544a9cc-4412-4b7d-a223-5bb181b595bb
+# ╠═╡ disabled = true
+#=╠═╡
+# Base.show(io::IO, m::MIME"text/javascript", d3attrs::D3Attributes) =
+# 	Base.show(io, m, 
+# 		HypertextLiteral.JavaScript(
+# 			events_to_javascript(d3attrs.events).content *
+# 			animation_to_javascript(d3attrs.animationTime).content *
+# 			attr_style_to_javascript("attr", d3attrs.attributes).content *
+# 			attr_style_to_javascript("style", d3attrs.style).content
+# 		)
+# 	)
+  ╠═╡ =#
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -395,14 +416,17 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╠═227f7480-a39d-4692-9874-ff9328e4080a
 # ╠═8803b1d9-a29c-4b4c-b5bc-93a78561a70f
 # ╟─e3156da9-8603-41f9-ad41-03eaf79c4540
+# ╟─b5110c15-0b46-4450-b8d2-9a83f7aeef54
+# ╠═c06a51f5-224a-4ffa-87a7-d5f39a1a4bb5
+# ╠═37f3557c-0d82-464d-9f36-847eceebaae6
+# ╟─d8c59da2-5a98-4321-89f2-4766d9ad14c6
+# ╠═c80d5063-aac3-4ee7-994c-eb6394b225eb
+# ╠═813d7b17-a806-4d9e-95ed-e095a43a8291
+# ╟─b6aac451-9e02-4a42-8be3-0f0521bedbed
 # ╟─793e2198-560d-461c-a9c4-40e042eab790
 # ╠═44721f68-c05e-4d6d-a721-6809a4ab72f8
 # ╠═53493b6d-9677-4683-a19a-9a4879b76f00
 # ╠═838314e4-a125-4578-9c68-400610133912
-# ╠═c80d5063-aac3-4ee7-994c-eb6394b225eb
 # ╠═d544a9cc-4412-4b7d-a223-5bb181b595bb
-# ╟─b5110c15-0b46-4450-b8d2-9a83f7aeef54
-# ╠═c06a51f5-224a-4ffa-87a7-d5f39a1a4bb5
-# ╠═37f3557c-0d82-464d-9f36-847eceebaae6
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

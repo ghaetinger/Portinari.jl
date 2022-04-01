@@ -14,8 +14,8 @@ macro bind(def, element)
     end
 end
 
-# ╔═╡ 2f76b33d-fa26-4b3d-9d78-78cc65e99b7e
-using AbstractPlutoDingetjes, HypertextLiteral, Parameters, PlutoUI, PlutoDevMacros
+# ╔═╡ b9c61535-53a8-4442-a489-0ba662d88050
+using AbstractPlutoDingetjes, HypertextLiteral, Parameters, PlutoUI, PlutoDevMacros, PlutoLinks, Deno_jll
 
 # ╔═╡ f6a506e8-23ae-4a5b-842d-f938cfceee5f
 @only_in_nb PlutoUI.TableOfContents()
@@ -42,17 +42,17 @@ md"## Structure"
 begin
   struct Area <: D3Component
     data         :: Vector{NamedTuple{(:x, :y0, :y1), Tuple{<:Real, <:Real, <:Real}}}
-	d3Attributes :: D3Attributes
+	attributes   :: D3Attr
 	curveType    :: Curve
 	id           :: String
   end
 
   Area(x::Vector{}, y0::Vector{}, y1::Vector{}, id::String;
-	d3Attributes=D3Attributes(),
+	attributes=D3Attr(),
 	curveType=Natural
   ) = Area(
 	  [(x=x[i], y0=y0[i], y1=y1[i]) for i ∈ 1:length(x)],
-	  d3Attributes,
+	  attributes,
 	  curveType,
 	  id
   )
@@ -70,42 +70,32 @@ md"## Javascript Snippet"
 
 # ╔═╡ 1d601e35-6cac-4473-b476-9fc4aa320937
 Base.show(io::IO, m::MIME"text/javascript", area::Area) =
-	show(io, m, @js """
-	    const span = document.getElementById($(area.id));
-		span.value = span.value || {};
-		span.dispatchEvent(new CustomEvent("input"));
-
-		xScale = xScale || $(Axis((x->x.x).(area.data), [50, 250], Bottom))(s)[0];
-		yScale = yScale || $(Axis((x->x.y1).(area.data), [50, 250], Left))(s)[0];
-	
-    	const path = d3.area()
-					   .x(d => xScale(d.x))
-      				   .y0(d => yScale(d.y0))
-      				   .y1(d => yScale(d.y1))
-      				   .curve(d3.$(area.curveType))
-
-		const data = $(area.data);
-    	s.selectAll(".area-" + id)
-	     .data([data])
-     	 .join("path")
-     	 $(area.d3Attributes)
-     	 .attr("d", path)
-     	 .attr("class", "area-" + id)
-	""")
+    show(io, m, @js """<h1 style="color: red">TODO</h1>""")
 
 # ╔═╡ c0fda2f7-a893-496c-8798-3a84a0c92d5a
 Base.show(io::IO, m::MIME"text/html", area::Area) =	show(io, m, @htl("""
 	<span id=$(area.id)>
 	<script id="preview-$(area.id)">
+	const { d3, area } = $(import_local_js(bundle_code));
 
-	const { d3 } = $(import_local_js(d3_import));
-
-	const svg = this == null ? DOM.svg(300, 300) : this;
+	const svg = this == null ? DOM.svg(600, 300) : this;
 	const s = this == null ? d3.select(svg) : this.s;
 
-	var xScale, yScale;
-	
-	$(area)(s, 0, currentScript.parentElement);
+	var xScale, yScale, xRange, yRange;
+	xRange = [0, 600];
+	yRange = [0, 300];
+	xScale = $(HAxis((x->x.x).(area.data), [0.1, 0.9], Bottom))(s)[0];
+	yScale = $(VAxis(reduce(vcat, (x->[x.y0, x.y1]).(area.data)), [0.1, 0.9], Left))(s)[0];
+
+	area(
+		$(PublishToJS(area.data)),
+		s,
+		xScale,
+		yScale,
+		$(PublishToJS(to_named_tuple(area.attributes))),
+		$(area.id),
+		d3.$(area.curveType)
+	);
 
 	const output = svg
 	output.s = s
@@ -121,13 +111,13 @@ Base.show(io::IO,  m::MIME"text/javascript", curve::Curve) = Base.show(io, m, Hy
 md"# Example"
 
 # ╔═╡ 12ac3f7f-c1a4-4575-b7f8-82684175b921
-@only_in_nb x = collect(1:5)
+@only_in_nb x = collect(1:100)
 
 # ╔═╡ 05b7122e-96fe-479c-a7a8-a6070e93d775
 @only_in_nb y = [rand() for _ ∈ x]
 
 # ╔═╡ b76623bc-53a6-4a90-b11b-266d1caac640
-@only_in_nb @bind areaevents area = Area(x, y, y .* 2, "area-id"; d3Attributes=D3Attributes(events=["mouseover"]))
+@only_in_nb @bind areaevents area = Area(x, y, y .* 2, "area-id"; attributes=D3Attr(events=["mouseover"]))
 
 # ╔═╡ 9f2fd77e-1810-4f1a-891b-b2e460e8489a
 @only_in_nb D3Canvas([area], "area_example"; d3Attributes=D3Attributes(;
@@ -147,17 +137,21 @@ md"# Example"
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 AbstractPlutoDingetjes = "6e696c72-6542-2067-7265-42206c756150"
+Deno_jll = "04572ae6-984a-583e-9378-9577a1c2574d"
 HypertextLiteral = "ac1192a8-f4b3-4bfe-ba22-af5b92cd3ab2"
 Parameters = "d96e819e-fc66-5662-9728-84c9c7592b0a"
 PlutoDevMacros = "a0499f29-c39b-4c5c-807c-88074221b949"
+PlutoLinks = "0ff47ea0-7a50-410d-8455-4348d5de0420"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 
 [compat]
 AbstractPlutoDingetjes = "~1.1.4"
+Deno_jll = "~1.20.4"
 HypertextLiteral = "~0.9.3"
 Parameters = "~0.12.3"
 PlutoDevMacros = "~0.4.5"
-PlutoUI = "~0.7.37"
+PlutoLinks = "~0.1.5"
+PlutoUI = "~0.7.38"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
@@ -182,6 +176,12 @@ uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
 [[deps.Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
 
+[[deps.CodeTracking]]
+deps = ["InteractiveUtils", "UUIDs"]
+git-tree-sha1 = "9fb640864691a0936f94f89150711c36072b0e8f"
+uuid = "da1fd8a2-8d9e-5ec2-8556-3022fb5608a2"
+version = "1.0.8"
+
 [[deps.ColorTypes]]
 deps = ["FixedPointNumbers", "Random"]
 git-tree-sha1 = "024fe24d83e4a5bf5fc80501a314ce0d1aa35597"
@@ -196,9 +196,22 @@ uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
 deps = ["Printf"]
 uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
 
+[[deps.Deno_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "970da1e64a94f13b51c81691c376a1d5a83a0b3c"
+uuid = "04572ae6-984a-583e-9378-9577a1c2574d"
+version = "1.20.4+0"
+
+[[deps.Distributed]]
+deps = ["Random", "Serialization", "Sockets"]
+uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
+
 [[deps.Downloads]]
 deps = ["ArgTools", "LibCURL", "NetworkOptions"]
 uuid = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
+
+[[deps.FileWatching]]
+uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
 
 [[deps.FixedPointNumbers]]
 deps = ["Statistics"]
@@ -227,11 +240,23 @@ version = "0.2.2"
 deps = ["Markdown"]
 uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 
+[[deps.JLLWrappers]]
+deps = ["Preferences"]
+git-tree-sha1 = "abc9885a7ca2052a736a600f7fa66209f96506e1"
+uuid = "692b3bcd-3c85-4b1f-b108-f13ce0eb3210"
+version = "1.4.1"
+
 [[deps.JSON]]
 deps = ["Dates", "Mmap", "Parsers", "Unicode"]
 git-tree-sha1 = "3c837543ddb02250ef42f4738347454f95079d4e"
 uuid = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
 version = "0.21.3"
+
+[[deps.JuliaInterpreter]]
+deps = ["CodeTracking", "InteractiveUtils", "Random", "UUIDs"]
+git-tree-sha1 = "9c43a2eb47147a8776ca2ba489f15a9f6f2906f8"
+uuid = "aa1ae85d-cabe-5617-a682-6adf51b2e16a"
+version = "0.9.11"
 
 [[deps.LibCURL]]
 deps = ["LibCURL_jll", "MozillaCACerts_jll"]
@@ -258,6 +283,12 @@ uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 
 [[deps.Logging]]
 uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
+
+[[deps.LoweredCodeUtils]]
+deps = ["JuliaInterpreter"]
+git-tree-sha1 = "6b0440822974cab904c8b14d79743565140567f6"
+uuid = "6f1432cf-f94c-5a45-995e-cdbf5db27b0b"
+version = "2.2.1"
 
 [[deps.MacroTools]]
 deps = ["Markdown", "Random"]
@@ -299,9 +330,9 @@ version = "0.12.3"
 
 [[deps.Parsers]]
 deps = ["Dates"]
-git-tree-sha1 = "85b5da0fa43588c75bb1ff986493443f821c70b7"
+git-tree-sha1 = "621f4f3b4977325b9128d5fae7a8b4829a0c2222"
 uuid = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
-version = "2.2.3"
+version = "2.2.4"
 
 [[deps.Pkg]]
 deps = ["Artifacts", "Dates", "Downloads", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "Serialization", "TOML", "Tar", "UUIDs", "p7zip_jll"]
@@ -313,11 +344,29 @@ git-tree-sha1 = "994167def8f46d3be21783a76705228430e29632"
 uuid = "a0499f29-c39b-4c5c-807c-88074221b949"
 version = "0.4.5"
 
+[[deps.PlutoHooks]]
+deps = ["InteractiveUtils", "Markdown", "UUIDs"]
+git-tree-sha1 = "072cdf20c9b0507fdd977d7d246d90030609674b"
+uuid = "0ff47ea0-7a50-410d-8455-4348d5de0774"
+version = "0.0.5"
+
+[[deps.PlutoLinks]]
+deps = ["FileWatching", "InteractiveUtils", "Markdown", "PlutoHooks", "Revise", "UUIDs"]
+git-tree-sha1 = "0e8bcc235ec8367a8e9648d48325ff00e4b0a545"
+uuid = "0ff47ea0-7a50-410d-8455-4348d5de0420"
+version = "0.1.5"
+
 [[deps.PlutoUI]]
 deps = ["AbstractPlutoDingetjes", "Base64", "ColorTypes", "Dates", "Hyperscript", "HypertextLiteral", "IOCapture", "InteractiveUtils", "JSON", "Logging", "Markdown", "Random", "Reexport", "UUIDs"]
-git-tree-sha1 = "bf0a1121af131d9974241ba53f601211e9303a9e"
+git-tree-sha1 = "670e559e5c8e191ded66fa9ea89c97f10376bb4c"
 uuid = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
-version = "0.7.37"
+version = "0.7.38"
+
+[[deps.Preferences]]
+deps = ["TOML"]
+git-tree-sha1 = "d3538e7f8a790dc8903519090857ef8e1283eecd"
+uuid = "21216c6a-2e73-6563-6e65-726566657250"
+version = "1.2.5"
 
 [[deps.Printf]]
 deps = ["Unicode"]
@@ -341,6 +390,12 @@ deps = ["UUIDs"]
 git-tree-sha1 = "838a3a4188e2ded87a4f9f184b4b0d78a1e91cb7"
 uuid = "ae029012-a4dd-5104-9daa-d747884805df"
 version = "1.3.0"
+
+[[deps.Revise]]
+deps = ["CodeTracking", "Distributed", "FileWatching", "JuliaInterpreter", "LibGit2", "LoweredCodeUtils", "OrderedCollections", "Pkg", "REPL", "Requires", "UUIDs", "Unicode"]
+git-tree-sha1 = "4d4239e93531ac3e7ca7e339f15978d0b5149d03"
+uuid = "295af30f-e4ad-537b-8983-00126c2a3abe"
+version = "3.3.3"
 
 [[deps.SHA]]
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
@@ -403,7 +458,7 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╔═╡ Cell order:
 # ╠═f6a506e8-23ae-4a5b-842d-f938cfceee5f
 # ╟─796ed4ef-66b8-4c03-a0d2-429cc3ac76eb
-# ╠═2f76b33d-fa26-4b3d-9d78-78cc65e99b7e
+# ╠═b9c61535-53a8-4442-a489-0ba662d88050
 # ╠═40896e22-e6a0-4dfb-b202-9764de200d79
 # ╟─93ede436-8e57-4030-93ae-74567844f624
 # ╟─a6ef4beb-dd0d-4517-8382-30bbdfb685cc
