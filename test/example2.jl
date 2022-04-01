@@ -19,78 +19,71 @@ begin
 	using Pkg
 	using Revise
 	Pkg.activate(Base.current_project(@__DIR__))
-	using Portinari, PlutoUI, HypertextLiteral
+	using Portinari, PlutoUI, HypertextLiteral, PlutoDevMacros
 end
 
-# ╔═╡ 39bd54a5-6f73-43ff-b5ec-90551642741d
-@bind param PlutoUI.combine() do Child
-	md"""
-	Width: $(Child(:width, Slider(300:10:1000; show_value=true)))  | 
-	Height: $(Child(:height, Slider(300:10:1000; show_value=true)))
+# ╔═╡ 8899fc63-ee2c-4fab-8826-970034b21e00
+@only_in_nb x = [rand() for _ ∈ collect(1:100)]
 
-	Stroke Width: $(Child(:strw, Slider(1:10; show_value=true)))
-	"""
-end
+# ╔═╡ 3b4f3edf-19e2-41a9-92cc-01d7c797c993
+@only_in_nb y = [rand() for _ ∈ x]
 
-# ╔═╡ cc8b977d-079a-4124-b9e2-c3d329cc2cd5
-x = collect(1:50);
+# ╔═╡ bdc5297b-9251-49d8-aebd-ed9fd8c75526
+@only_in_nb size = [rand() * rand() * 5000 for i ∈ 1:length(x)]
 
-# ╔═╡ 8b7a8f64-05b2-422b-8ec5-52da5d8acb68
-y = [rand() for _ ∈ x];
+# ╔═╡ 5cb83977-12e1-44ba-b3c4-903a3a6e28d5
+@only_in_nb @bind trievents triangles = Shape(x, y, size, "tri-id";
+	d3Attributes=D3Attributes(;attributes=Dict("fill" => "rgba(255, 0, 0, 0.5)"), events=["click"]),
+	shapeType=Portinari.Triangle)
 
-# ╔═╡ dc81bcdd-df79-4f23-82fc-6efefc299d46
-size = [rand() * 1000 for _ ∈ x];
+# ╔═╡ 19e3bdfe-4889-4b50-a26a-434d5f3d3791
+@only_in_nb @bind circleevents circles = Shape(x, y, size .* 0.5, "circle-id";
+	d3Attributes=D3Attributes(;attributes=Dict("fill" => "rgba(0, 255, 0, 0.5)"), events=["click", "mouseover"]))
 
-# ╔═╡ 74185d5a-4c10-4570-a99d-44b7bed8afae
-@bind events D3Canvas([
-		Line(x, y;
-			cwidth=param.width,
-			cheight=param.height,
-		    offset = 50,
-			d3Attributes=D3Attributes(
-				attributes=Dict(
-					"fill" => "none",
-					"stroke" => "gold",
-					"stroke-width" => "$(param.strw)"
-				)
-			)
+# ╔═╡ d4b795b2-e6b1-4f30-af27-ea3cd39b09f7
+@only_in_nb md"""
+# Report
+#### X: $(circleevents["click"]["data"]["x"])
+#### Y: $(circleevents["click"]["data"]["y"])
+#### Size: $(circleevents["click"]["data"]["size"])
+"""
+
+# ╔═╡ dcdba915-fc93-4563-bb50-718a47a747c0
+@only_in_nb @bind squarevents squares = Shape(x, y, size .* 0.25, "square-id";
+	d3Attributes=D3Attributes(;attributes=Dict("fill" => "rgba(0, 0, 255, 0.5)"), events=["click"]),
+	shapeType=Portinari.Square)
+
+# ╔═╡ 449afb17-0fb3-4b5a-829f-d09978a673fb
+@only_in_nb (trievents, circleevents, squarevents);
+
+# ╔═╡ 2a212f8b-7a38-4d70-9a08-998887ad9d24
+@only_in_nb axis_group = Axis2D(Axis(x, 500, 50, Portinari.Bottom), Axis(y, 500, 50, Portinari.Top), [triangles, circles, squares], D3Attributes(), [Portinari.zoom], "axis")
+
+# ╔═╡ 11611800-43b3-470e-952d-cf89c4efb030
+@only_in_nb @bind ev D3Canvas([axis_group], "circle_example";
+	d3Attributes=D3Attributes(;
+		attributes=Dict(
+			"viewBox" => "0 0 600 600"
 		),
-		Shape(x, y, size;
-		cwidth=param.width,
-			cheight=param.height,
-		    offset = 50,
-			d3Attributes=D3Attributes(;
-				attributes=Dict(
-				"fill" => "green",
-				"stroke" => "black"
-				),
-				events=["mouseover"]
-			)
+		style=Dict(
+			"width" => "600",
+			"height" => "600"
 		)
-	], 
-	"my-canvas";
-	d3Attributes=D3Attributes(
-		attributes=Dict("viewBox" => "0 0 $(param.width) $(param.height)"),
-		style=Dict("width" => "$(param.width)px", "height" => "$(param.height)px")
-	)
-)
+))
 
-# ╔═╡ 9a8d0b79-33b4-48d7-8e93-77b94e360a48
-!ismissing(events) && haskey(events, "1-mouseover") ? md"""
-## Report
-
-X: $(events["1-mouseover"]["data"]["x"])
-
-Y: $(events["1-mouseover"]["data"]["y"])
-
-Value: $(events["1-mouseover"]["data"]["size"])
-""" : md""
+# ╔═╡ 89ae6bbb-81f7-4e49-ace6-d42fd9e4eeae
+squarevents
 
 # ╔═╡ Cell order:
 # ╠═a766285c-9b11-11ec-0609-1b79637175d3
-# ╟─39bd54a5-6f73-43ff-b5ec-90551642741d
-# ╠═cc8b977d-079a-4124-b9e2-c3d329cc2cd5
-# ╠═8b7a8f64-05b2-422b-8ec5-52da5d8acb68
-# ╠═dc81bcdd-df79-4f23-82fc-6efefc299d46
-# ╟─9a8d0b79-33b4-48d7-8e93-77b94e360a48
-# ╠═74185d5a-4c10-4570-a99d-44b7bed8afae
+# ╠═8899fc63-ee2c-4fab-8826-970034b21e00
+# ╠═3b4f3edf-19e2-41a9-92cc-01d7c797c993
+# ╠═bdc5297b-9251-49d8-aebd-ed9fd8c75526
+# ╠═d4b795b2-e6b1-4f30-af27-ea3cd39b09f7
+# ╠═449afb17-0fb3-4b5a-829f-d09978a673fb
+# ╠═11611800-43b3-470e-952d-cf89c4efb030
+# ╠═2a212f8b-7a38-4d70-9a08-998887ad9d24
+# ╠═5cb83977-12e1-44ba-b3c4-903a3a6e28d5
+# ╠═89ae6bbb-81f7-4e49-ace6-d42fd9e4eeae
+# ╠═19e3bdfe-4889-4b50-a26a-434d5f3d3791
+# ╠═dcdba915-fc93-4563-bb50-718a47a747c0

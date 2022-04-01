@@ -1,84 +1,199 @@
 ### A Pluto.jl notebook ###
-# v0.18.1
+# v0.18.4
 
 using Markdown
 using InteractiveUtils
 
-# ╔═╡ e1f13b19-423b-41ff-82cf-792d804f4b18
+# ╔═╡ 0cde3f18-6b7e-4c96-a09e-b5419d481053
 using AbstractPlutoDingetjes, HypertextLiteral, Parameters, PlutoUI, PlutoDevMacros
 
-# ╔═╡ 7d020640-6e54-4725-92fa-a07ba258e7cf
+# ╔═╡ 5ee4e18c-8a03-41c8-ab2c-2c3ff430f5f8
 @only_in_nb PlutoUI.TableOfContents()
 
-# ╔═╡ 537b9d39-5244-43f4-96e7-4fa99c8c6892
+# ╔═╡ 652695a3-5c8b-4cea-b79c-fe1192df8527
 md"# Ingredients"
 
-# ╔═╡ 474f29be-f7db-4d97-bb68-bd7cd5862422
+# ╔═╡ 01e347d4-a998-476a-a549-bbd591330439
 @plutoinclude "./canvas.jl" "all"
 
-# ╔═╡ e7779bec-c6cb-4d64-bfc0-74d9c558fe28
-md"# Linear Scale"
+# ╔═╡ 0a077719-b3a6-4393-818e-736c624d3caa
+md"# Axis"
 
-# ╔═╡ 762847fa-0710-4973-adcf-697ccd245df4
-md"## Position"
+# ╔═╡ 9d8a1b6d-d2ae-4654-a341-663262a5c97f
+md"## Positions"
 
-# ╔═╡ bd8f5ee1-dc2a-4336-9b70-dfe4277210d9
-@enum Direction Top Bottom Left Right
+# ╔═╡ 15dfc897-41ba-453e-a2f8-8aaf8b26985d
+md"### Horizontal"
 
-# ╔═╡ df99d778-abb1-4cfa-a576-f76394b4ac9e
-Base.show(io::IO, m::MIME"text/javascript", pos::Direction) =
+# ╔═╡ 8b0b7d98-1fcf-4539-b7bd-91f683600ed2
+@enum HDir Top Bottom
+
+# ╔═╡ dfeade78-3b1d-4b58-8501-71a6a3c39ec3
+Base.show(io::IO, m::MIME"text/javascript", pos::HDir) =
 	show(io, m, HypertextLiteral.JavaScript("axis"  * string(pos)))
 
-# ╔═╡ ac43922e-c65f-4dd3-9596-6c68c57fa5d4
+# ╔═╡ 1d6ef644-15a1-46b2-b3e2-75ce68424fdd
+md"### Vertical"
+
+# ╔═╡ 76a72022-fdf6-4715-a793-241ddd452f12
+@enum VDir Left Right
+
+# ╔═╡ 29a2095f-9fca-4599-b6e2-4f14467544cb
+Base.show(io::IO, m::MIME"text/javascript", pos::VDir) =
+	show(io, m, HypertextLiteral.JavaScript("axis"  * string(pos)))
+
+# ╔═╡ 6b95627d-0d5a-455a-b9d8-f29bf23c4e9d
 md"## Structure"
 
-# ╔═╡ 7077ff40-8dd1-43ba-9d4f-c1d905e40fee
+# ╔═╡ b0e3453f-45c0-465b-9df5-476a7d6ff42f
 begin
-  struct LinearScale{T<:Real} <: D3Component
-    domain :: Tuple{T, T}
-    range  :: Tuple{T, T}
-	show   :: Bool
-	dir    :: Direction
-	pos    :: NamedTuple{(:x, :y), Tuple{Int64, Int64}}
-  end
-	
-  function LinearScale(values::Vector{T}, range;
-  	show=false, dir=Bottom, pos=(x=0, y=0)
-  ) where T <: Real
-    domain = extrema(values)
-	LinearScale(domain, range |> Tuple .|> T, show, dir, pos)
-  end
+	struct Axis{T} <: D3Component where T
+  		domain       :: Tuple{T, T}
+		range        :: Tuple{T, T}
+		show         :: Bool
+		direction    :: Union{HDir, VDir}
+		d3Attributes :: D3Attributes
+ 	 end
 
-  function LinearScale(values::Vector{<:Real}, size::T, offset::T; show=false, dir=Bottom, pos=(x=0, y=0)) where T <: Real
-	  LinearScale(values, [offset, size-offset]; show=show, dir=dir, pos=pos)
-  end
-end;
+  	function Axis(
+	  			values::Vector{T}, range, dir::Union{HDir, VDir};
+				d3Attributes=D3Attributes(),
+  				show=false
+  	) where T <: Real
+		domain = extrema(values)
+		Axis(domain, range |> Tuple .|> T, show, dir, d3Attributes)
+  	end
 
-# ╔═╡ ce989e07-8317-4747-8ce5-84f0a123b8f0
+	function Axis(values::Vector{<:Real}, size::T, offset::T, dir::Union{HDir, VDir}; d3Attributes=D3Attributes(), show=false) where T <: Real
+		Axis(values, [offset, size-offset], dir; d3Attributes=d3Attributes, show=show)
+  end
+end
+
+# ╔═╡ 0b4accf0-16a1-4985-9723-f8f1a879506c
 md"## Javascript Snippet"
 
-# ╔═╡ 8f883397-2167-48fc-b826-0367d294d573
-function Base.show(io::IO, m::MIME"text/javascript", linear_scale::LinearScale) 
+# ╔═╡ c60565ba-7ec1-482f-8086-4d800acd9520
+function Base.show(io::IO, m::MIME"text/javascript", axis::Axis) 
 show(io, m, @js("""
     const scale = d3.scaleLinear()
-      .domain($([linear_scale.domain...]))
-      .range($([linear_scale.range...]))
+      .domain($([axis.domain...]))
+      .range($([axis.range...]));
 
-	if ($(linear_scale.show)) {
-		var axis = d3.$(linear_scale.dir)()
-                     .scale(scale)
+	var axis_descr = d3.$(axis.direction)()
+    	               .scale(scale);
 
-		s.selectAll(".axis-" + id)
-         .data([1])
-         .join("g")
-		 .attr("class", "axis-" + id)
-		 .style("transform", 
-                "translate($(linear_scale.pos.x)px, $(linear_scale.pos.y)px)")
-         .call(axis)
+	const axis = s.selectAll(".axis-" + id)
+       	          .data([1])
+         		  .join("g")
+		 		  .attr("class", "axis-" + id)
+         		  .call(axis_descr);
+
+	if ($(!axis.show)) {
+		axis.style("visibility", "hidden");
 	}
 
-    return scale
+    return [scale, axis]
 """))
+end
+
+# ╔═╡ 9df4facb-6862-4898-aa04-ae944c94969f
+md"# Axis 2D"
+
+# ╔═╡ 6fdebb9a-3053-4699-bd3b-6fa4c43c3283
+md"## Structure"
+
+# ╔═╡ b1efe9b3-45fc-48b2-b754-ade9938647d3
+begin	
+	struct Axis2D <: D3Component
+		horizontal   :: Axis
+		vertical     :: Axis
+		children     :: Vector{<:D3Component}
+		d3Attributes :: D3Attributes
+		mods         :: Vector{Function}
+		id           :: String
+  	end
+end;
+
+# ╔═╡ 28c2fbc1-fa21-4ace-86c8-d085f19af466
+md"## Javascript Snippet"
+
+# ╔═╡ baa7bf03-77f8-4fa1-9635-df02629cfe01
+function Base.show(io::IO, m::MIME"text/javascript", axis_2d::Axis2D) 
+show(io, m, @js("""
+	const g = s.selectAll(".axis2d-" + id)
+         	   .data([1])
+         	   .join("g")
+			   .attr("class", "axis2d-" + id);
+
+	var [xScale, xAxis] = $(axis_2d.horizontal)(g, 0);
+	var [yScale, yAxis] = $(axis_2d.vertical)(g, 1);
+
+	var comp_foos = $(axis_2d.children);
+
+	for (var i = 0; i < comp_foos.length; i++) {
+		comp_foos[i](g, i + 2, _span);
+	}
+
+	g$(axis_2d.d3Attributes);
+
+	const mods = $([mod(axis_2d) for mod ∈ axis_2d.mods]);
+
+	for (var i = 0; i < mods.length; i++) {
+		mods[i](g);
+	}
+
+	return [xScale, yScale];
+"""))
+end
+
+# ╔═╡ 2b0b5165-776a-4d1f-9151-19465d75124c
+Base.show(io::IO, m::MIME"text/html", axis_2d::Axis2D) =
+	show(io, m, @htl("""
+	<span id=$(axis_2d.id)>
+	<script id="preview-$(axis_2d.id)">
+	const svg = this == null ? DOM.svg(600, 300) : this;
+	const s = this == null ? d3.select(svg) : this.s;
+
+	var xScale, yScale;
+
+	$(axis_2d)(s, 0, currentScript.parentElement);
+
+	const output = svg
+	output.s = s
+	return output
+	</script>
+	</span>
+"""))
+
+# ╔═╡ a46f89d7-3670-4860-9bf3-eafffa5c5f48
+md"# Modifier functions"
+
+# ╔═╡ 6b0ce571-1f96-40a7-839c-c0ae2efb3107
+function zoom(axis_2d::Axis2D)
+	@js("""
+		var zoom = d3.zoom()
+		.on("zoom", updateChart);
+
+		s.call(zoom);
+
+		function updateChart(event, data) {
+			const constXScale = xScale;
+			const constYScale = yScale;
+	
+			xScale = event.transform.rescaleX(xScale);
+    		yScale = event.transform.rescaleY(yScale);
+
+    		xAxis.call(d3.$(axis_2d.horizontal.direction)(xScale))
+    		yAxis.call(d3.$(axis_2d.vertical.direction)(yScale))
+
+			for (var i = 0; i < comp_foos.length; i++) {
+				comp_foos[i](s, i + 2, _span, true);
+			}
+	
+			xScale = constXScale;
+			yScale = constYScale;
+		}
+	""")
 end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
@@ -102,7 +217,7 @@ PlutoUI = "~0.7.37"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.7.1"
+julia_version = "1.7.2"
 manifest_format = "2.0"
 
 [[deps.AbstractPlutoDingetjes]]
@@ -339,17 +454,29 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 """
 
 # ╔═╡ Cell order:
-# ╟─7d020640-6e54-4725-92fa-a07ba258e7cf
-# ╟─537b9d39-5244-43f4-96e7-4fa99c8c6892
-# ╠═e1f13b19-423b-41ff-82cf-792d804f4b18
-# ╠═474f29be-f7db-4d97-bb68-bd7cd5862422
-# ╟─e7779bec-c6cb-4d64-bfc0-74d9c558fe28
-# ╟─762847fa-0710-4973-adcf-697ccd245df4
-# ╠═bd8f5ee1-dc2a-4336-9b70-dfe4277210d9
-# ╠═df99d778-abb1-4cfa-a576-f76394b4ac9e
-# ╟─ac43922e-c65f-4dd3-9596-6c68c57fa5d4
-# ╠═7077ff40-8dd1-43ba-9d4f-c1d905e40fee
-# ╟─ce989e07-8317-4747-8ce5-84f0a123b8f0
-# ╠═8f883397-2167-48fc-b826-0367d294d573
+# ╟─5ee4e18c-8a03-41c8-ab2c-2c3ff430f5f8
+# ╠═652695a3-5c8b-4cea-b79c-fe1192df8527
+# ╠═0cde3f18-6b7e-4c96-a09e-b5419d481053
+# ╠═01e347d4-a998-476a-a549-bbd591330439
+# ╟─0a077719-b3a6-4393-818e-736c624d3caa
+# ╟─9d8a1b6d-d2ae-4654-a341-663262a5c97f
+# ╟─15dfc897-41ba-453e-a2f8-8aaf8b26985d
+# ╠═8b0b7d98-1fcf-4539-b7bd-91f683600ed2
+# ╠═dfeade78-3b1d-4b58-8501-71a6a3c39ec3
+# ╟─1d6ef644-15a1-46b2-b3e2-75ce68424fdd
+# ╠═76a72022-fdf6-4715-a793-241ddd452f12
+# ╠═29a2095f-9fca-4599-b6e2-4f14467544cb
+# ╟─6b95627d-0d5a-455a-b9d8-f29bf23c4e9d
+# ╠═b0e3453f-45c0-465b-9df5-476a7d6ff42f
+# ╟─0b4accf0-16a1-4985-9723-f8f1a879506c
+# ╠═c60565ba-7ec1-482f-8086-4d800acd9520
+# ╟─9df4facb-6862-4898-aa04-ae944c94969f
+# ╟─6fdebb9a-3053-4699-bd3b-6fa4c43c3283
+# ╠═b1efe9b3-45fc-48b2-b754-ade9938647d3
+# ╟─28c2fbc1-fa21-4ace-86c8-d085f19af466
+# ╠═baa7bf03-77f8-4fa1-9635-df02629cfe01
+# ╠═2b0b5165-776a-4d1f-9151-19465d75124c
+# ╟─a46f89d7-3670-4860-9bf3-eafffa5c5f48
+# ╠═6b0ce571-1f96-40a7-839c-c0ae2efb3107
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

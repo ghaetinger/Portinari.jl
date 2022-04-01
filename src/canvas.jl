@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.18.1
+# v0.18.4
 
 using Markdown
 using InteractiveUtils
@@ -48,20 +48,20 @@ Base.show(io::IO, m::MIME"text/html", canvas::D3Canvas) =
 <script src="https://cdn.jsdelivr.net/npm/d3@6.2.0/dist/d3.min.js"></script>
 <script id="canvas-$(canvas.id)">
     const span = currentScript.parentElement;
-	console.log(span)
 	const svg = this == null ? DOM.svg($(canvas.initWidth),$(canvas.initHeight)) : this;
 	const s = this == null ? d3.select(svg) : this.s;
+
+	var xScale, yScale;
 
 	var comp_foos = $(canvas.components);
 
 	for (var i = 0; i < comp_foos.length; i++) {
-		comp_foos[i](i, span);
+		comp_foos[i](s, i, span);
 	}
 
 	const id = "canvas"; 
-    s.transition()
-     .duration($(canvas.d3Attributes.animationTime))
-     $(canvas.d3Attributes)
+	const disallow_animation = false;
+    s$(canvas.d3Attributes)
 
 	span.value = {};
 	const output = svg
@@ -70,6 +70,9 @@ Base.show(io::IO, m::MIME"text/html", canvas::D3Canvas) =
 </script>
 </span>
 """))
+
+# ╔═╡ d8b07f16-4c4d-44e7-b6a4-55e98035872b
+Bonds.initial_value(canvas::D3Canvas) = (;)
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -92,7 +95,7 @@ PlutoUI = "~0.7.37"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.7.1"
+julia_version = "1.7.2"
 manifest_format = "2.0"
 
 [[deps.AbstractPlutoDingetjes]]
@@ -338,5 +341,6 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╠═591ebc46-06c0-4ffc-85fc-30a35975bed1
 # ╟─ce31255b-fd64-4b01-86b5-f39f689c9766
 # ╠═61c3a0c2-5a4e-4114-a57f-099cfe05f7fd
+# ╠═d8b07f16-4c4d-44e7-b6a4-55e98035872b
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

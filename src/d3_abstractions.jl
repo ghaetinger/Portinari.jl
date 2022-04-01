@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.18.1
+# v0.18.4
 
 using Markdown
 using InteractiveUtils
@@ -28,7 +28,7 @@ begin
 	function Base.show(io::IO, m::MIME"text/javascript", r::RenderWithoutScriptTags)
 		full_result = repr(MIME"text/html"(), r.x; context=io)
 		write(io, 
-			"((id=0, span=undefined) => {" * full_result[1+length("<script>"):end-length("</script>")] * "})"
+			"((s, id=0, _span=undefined, disallow_animation=false) => {" * full_result[1+length("<script>"):end-length("</script>")] * "})"
 		)
 	end
 end
@@ -68,10 +68,10 @@ attr_style_to_javascript(head::String, ls::Dict{String, String}) =
 events_to_javascript(ls::Vector{String}) =
 	HypertextLiteral.JavaScript(
 		join([""".on("$event", (function(e, d) {
-			const key = id + "-" + "$event";
+			const key = "$event";
 			const count = span.value[key] == undefined ? 0 : span.value[key].count;
 			span.value[key] = {'count': count + 1, 'data': d};
-			span.dispatchEvent(new CustomEvent("input"))
+			span.dispatchEvent(new CustomEvent("input"));
 		}))""" for event ∈ ls], "\n")
 	)
 
@@ -79,7 +79,7 @@ events_to_javascript(ls::Vector{String}) =
 animation_to_javascript(animationTime::Int) =
 	HypertextLiteral.JavaScript("""
 		.transition()
-		.duration($animationTime)
+		.duration(disallow_animation ? 0 : $animationTime)
 	""")
 
 # ╔═╡ c80d5063-aac3-4ee7-994c-eb6394b225eb
@@ -126,7 +126,7 @@ PlutoUI = "~0.7.35"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.7.1"
+julia_version = "1.7.2"
 manifest_format = "2.0"
 
 [[deps.AbstractPlutoDingetjes]]

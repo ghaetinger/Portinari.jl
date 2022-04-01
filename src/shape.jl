@@ -1,8 +1,18 @@
 ### A Pluto.jl notebook ###
-# v0.18.1
+# v0.18.4
 
 using Markdown
 using InteractiveUtils
+
+# This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
+macro bind(def, element)
+    quote
+        local iv = try Base.loaded_modules[Base.PkgId(Base.UUID("6e696c72-6542-2067-7265-42206c756150"), "AbstractPlutoDingetjes")].Bonds.initial_value catch; b -> missing; end
+        local el = $(esc(element))
+        global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : iv(el)
+        el
+    end
+end
 
 # ╔═╡ 48c1bb3e-7a28-4784-bc2a-64b19bd58b49
 using AbstractPlutoDingetjes, HypertextLiteral, Parameters, PlutoUI, PlutoDevMacros
@@ -14,7 +24,7 @@ using AbstractPlutoDingetjes, HypertextLiteral, Parameters, PlutoUI, PlutoDevMac
 md"# Ingredients"
 
 # ╔═╡ a084c49d-b1de-4033-93be-6d747cc66696
-@plutoinclude "./linear_scale.jl" "all"
+@plutoinclude "./axis2D.jl" "all"
 
 # ╔═╡ f956d529-3001-4488-9898-db01aa6add73
 md"# Shape"
@@ -32,25 +42,20 @@ md"## Structure"
 begin
   struct Shape <: D3Component
     data         :: Vector{NamedTuple{(:x, :y, :size), Tuple{<:Real, <:Real, <:Real}}}
-	scaleX       :: LinearScale
-	scaleY       :: LinearScale
 	d3Attributes :: D3Attributes
 	shapeType    :: ShapeType
+	id           :: String
   end
 	
 
-  Shape(x, y, size;
-        cwidth=100,
-        cheight=100,
-        offset=0,
+  Shape(x::Vector{}, y::Vector{}, size::Vector{}, id;
         d3Attributes=D3Attributes(),
 	    shapeType=Circle
   ) = Shape(
 	  [(x=x[i], y=y[i], size=size[i]) for i ∈ 1:length(x)],
-	  LinearScale(x, cwidth, offset),
-	  LinearScale(y, cheight, offset),
 	  d3Attributes,
-	  shapeType
+	  shapeType,
+	  id
   )
 end;
 
@@ -60,8 +65,14 @@ md"## Javascript Snippet"
 # ╔═╡ 3d5b3b66-70d6-4ee7-b87d-e95f5fbe884a
 function Base.show(io::IO, m::MIME"text/javascript", shape::Shape)
 	show(io, m, @js """
-    	const xScale = $(shape.scaleX)();
-    	const yScale = $(shape.scaleY)();
+	    var span = document.getElementById($(shape.id));
+		span = span == null ? _span : span;
+		span.value = span.value || {};
+		span.dispatchEvent(new CustomEvent("input"));
+
+		xScale = xScale || $(Axis((x->x.x).(shape.data), [50, 250], Bottom))(s)[0];
+		yScale = yScale || $(Axis((x->x.y).(shape.data), [50, 250], Left))(s)[0];
+	
 		const symbol = d3.symbol()
 	                     .type($(shape.shapeType))
 	                     .size(d => d.size);
@@ -78,6 +89,24 @@ function Base.show(io::IO, m::MIME"text/javascript", shape::Shape)
 	)
 end
 
+# ╔═╡ 8bd162c2-c572-43c5-b34a-f9846337b6a0
+Base.show(io::IO, m::MIME"text/html", shape::Shape) = show(io, m, @htl("""
+	<span id=$(shape.id)>
+	<script id="preview-$(shape.id)">
+	const svg = this == null ? DOM.svg(300, 300) : this;
+	const s = this == null ? d3.select(svg) : this.s;
+
+	var xScale, yScale;
+
+	$(shape)(s, 0, currentScript.parentElement);
+
+	const output = svg
+	output.s = s
+	return output
+	</script>
+	</span>
+"""))
+
 # ╔═╡ 59af5f8a-8383-4d3e-bc9b-39a99769515e
 Base.show(io::IO,  m::MIME"text/javascript", shapeType::ShapeType) = Base.show(io, m, HypertextLiteral.JavaScript("d3.symbol" * (string(shapeType))))
 
@@ -85,7 +114,7 @@ Base.show(io::IO,  m::MIME"text/javascript", shapeType::ShapeType) = Base.show(i
 md"# Example"
 
 # ╔═╡ 231107ce-cdc2-413f-91d0-5df25124d9b6
-@only_in_nb x = collect(1:5)
+@only_in_nb x = [rand() for _ ∈ collect(1:100)]
 
 # ╔═╡ 75adb70c-1cb0-4dd3-8ee4-a054e32094c9
 @only_in_nb y = [rand() for _ ∈ x]
@@ -93,34 +122,9 @@ md"# Example"
 # ╔═╡ 55930668-9a5d-4352-bfac-1332355f3afc
 @only_in_nb size = [rand() * rand() * 5000 for i ∈ 1:length(x)]
 
-# ╔═╡ 545a44dc-3a67-4cdf-92f4-fbc33342e2ef
-@only_in_nb D3Canvas([Shape(x, y, size;
-    cwidth=300,
-	cheight=300,
-	offset=50,
-	d3Attributes=D3Attributes(;attributes=Dict("fill" => "blue")),
-	shapeType=Triangle),
-	Shape(x, y, size .* 0.5;
-    cwidth=300,
-	cheight=300,
-	offset=50,
-	d3Attributes=D3Attributes(;attributes=Dict("fill" => "red"))),
-	Shape(x, y, size .* 0.25;
-    cwidth=300,
-	cheight=300,
-	offset=50,
-	d3Attributes=D3Attributes(;attributes=Dict("fill" => "green")),
-	shapeType=Square)
-], "circle_example";
-	d3Attributes=D3Attributes(;
-		attributes=Dict(
-			"viewBox" => "0 0 300 300"
-		),
-		style=Dict(
-			"width" => "300",
-			"height" => "300"
-		)
-))
+# ╔═╡ a680501f-e204-4c6f-b2c5-e630be97cdab
+@only_in_nb @bind circleevents circles = Shape(x, y, size .* 0.5, "circle-id";
+	d3Attributes=D3Attributes(;attributes=Dict("fill" => "rgba(0, 255, 0, 0.5)"), events=["click", "mouseover"]))
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -143,7 +147,7 @@ PlutoUI = "~0.7.37"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.7.1"
+julia_version = "1.7.2"
 manifest_format = "2.0"
 
 [[deps.AbstractPlutoDingetjes]]
@@ -381,7 +385,7 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 
 # ╔═╡ Cell order:
 # ╠═56c9d966-382d-4c31-95ae-3af31be8e319
-# ╠═e1ba78ff-a168-4a07-8b08-0299f83bc70f
+# ╟─e1ba78ff-a168-4a07-8b08-0299f83bc70f
 # ╠═48c1bb3e-7a28-4784-bc2a-64b19bd58b49
 # ╠═a084c49d-b1de-4033-93be-6d747cc66696
 # ╟─f956d529-3001-4488-9898-db01aa6add73
@@ -392,10 +396,11 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╠═3dbad6fc-e54e-49ee-a5f2-31ace0581812
 # ╟─3caffb89-d565-43b0-85ae-3a431d378f67
 # ╠═3d5b3b66-70d6-4ee7-b87d-e95f5fbe884a
-# ╠═e3c572e1-f4df-4b55-8ada-2221cffca8a7
+# ╠═8bd162c2-c572-43c5-b34a-f9846337b6a0
+# ╟─e3c572e1-f4df-4b55-8ada-2221cffca8a7
 # ╠═231107ce-cdc2-413f-91d0-5df25124d9b6
 # ╠═75adb70c-1cb0-4dd3-8ee4-a054e32094c9
 # ╠═55930668-9a5d-4352-bfac-1332355f3afc
-# ╠═545a44dc-3a67-4cdf-92f4-fbc33342e2ef
+# ╠═a680501f-e204-4c6f-b2c5-e630be97cdab
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

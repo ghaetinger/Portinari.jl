@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.18.1
+# v0.18.4
 
 using Markdown
 using InteractiveUtils
@@ -24,7 +24,7 @@ PlutoUI.TableOfContents()
 md"# Ingredients"
 
 # ╔═╡ 59597ab2-369e-4a9f-921a-d63649d1bba4
-@plutoinclude "./linear_scale.jl" "all"
+@plutoinclude "./axis2D.jl" "all"
 
 # ╔═╡ b30f2165-0980-42c9-a3cf-e36033083a2a
 md"# Line"
@@ -42,24 +42,19 @@ md"## Structure"
 begin
   struct Line <: D3Component
     data         :: Vector{NamedTuple{(:x, :y), Tuple{<:Real, <:Real}}}
-	scaleX       :: LinearScale
-	scaleY       :: LinearScale
 	d3Attributes :: D3Attributes
 	curveType    :: Curve
+	id           :: String
   end
 
-  Line(x, y;
-        cwidth=100,
-        cheight=100,
-        offset=0,
+  Line(x, y, id;
         d3Attributes=D3Attributes(),
 	    curveType=Natural
   ) = Line(
 	  [(x=x[i], y=y[i]) for i ∈ 1:length(x)],
-	  LinearScale(x, cwidth, offset),
-	  LinearScale(y, cheight, offset),
 	  d3Attributes,
-	  curveType
+	  curveType,
+	  id
   )
 end;
 
@@ -69,92 +64,76 @@ md"## Javascript Snippet"
 # ╔═╡ 92161843-357d-47ac-8da3-27b134b22084
 Base.show(io::IO, m::MIME"text/javascript", line::Line) =
 	show(io, m, @js """
-    	const xScale = $(line.scaleX)();
-    	const yScale = $(line.scaleY)();
+		var span = document.getElementById($(line.id));
+		span = span == null ? _span : span;
+		span.value = span.value || {};
+		span.dispatchEvent(new CustomEvent("input"));
+
+		xScale = xScale || $(Axis((x->x.x).(line.data), [50, 250], Bottom))(s)[0];
+		yScale = yScale || $(Axis((x->x.y).(line.data), [50, 250], Left))(s)[0];
+	
     	const path = d3.line()
 					   .x(d => xScale(d.x))
       				   .y(d => yScale(d.y))
       				   .curve(d3.$(line.curveType))
 
 		const data = $(line.data);
-    	s.selectAll(".line-" + id)
+    	s.selectAll(".line-" + $(line.id) + id)
 	     .data([data])
      	 .join("path")
      	 $(line.d3Attributes)
      	 .attr("d", path)
-     	 .attr("class", "line-" + id)
+     	 .attr("class", "line-" + $(line.id) + id)
 	""")
+
+# ╔═╡ d68ffecb-be5c-487c-8e22-7851312e9aa7
+Base.show(io::IO, m::MIME"text/html", line::Line) =	show(io, m, @htl("""
+	<span id=$(line.id)>
+	<script id="preview-$(line.id)">
+	const svg = this == null ? DOM.svg(600, 300) : this;
+	const s = this == null ? d3.select(svg) : this.s;
+
+	var xScale, yScale;
+
+	$(line)(s, 0, currentScript.parentElement);
+
+	const output = svg
+	output.s = s
+	return output
+	</script>
+	</span>
+"""))
 
 # ╔═╡ a8697379-6c24-4357-909c-42d2e92798a5
 Base.show(io::IO,  m::MIME"text/javascript", curve::Curve) = Base.show(io, m, HypertextLiteral.JavaScript("curve" * string(curve)))
 
+# ╔═╡ 9602bfaf-b079-429f-ad60-71d24b882998
+Bonds.initial_value(line::Line) = (;)
+
 # ╔═╡ ba53d4cc-b096-4fb8-86f3-ee8648c10cea
 md"# Example"
 
-# ╔═╡ 0b664967-afb7-4b6f-904d-0ebcc43e1b00
-@only_in_nb x = collect(1:5)
+# ╔═╡ 19a6176a-9a60-4e6c-86e0-38303bb78813
+@only_in_nb x = rand(5)
 
 # ╔═╡ 99fdeb31-01b8-4be5-bb42-fcc4f2da91ef
 @only_in_nb y = [rand() for _ ∈ x]
 
-# ╔═╡ 1a2da5d5-5908-4abd-a7bb-1fa3da814cee
-@only_in_nb @bind hoveraction D3Canvas([
-	
-	Line(x, y;
-    cwidth=300,
-	cheight=300,
-	offset=50,
+# ╔═╡ 0a27990c-f78e-4e10-875c-bbb07a2712a6
+@only_in_nb @bind lineev line = Line(x, y, "line_id";
 	d3Attributes=D3Attributes(;
 		attributes=Dict(
 			"fill" => "none",
 			"stroke" => "red",
 			"stroke-width" => "15.0"
 		),
-		events=["mouseover"]
+		events=["click"]
 	),
 	curveType=BasisClosed
 )
-	Line(x, y;
-    cwidth=300,
-	cheight=300,
-	offset=50,
-	d3Attributes=D3Attributes(;
-		attributes=Dict(
-			"fill" => "none",
-			"stroke" => "gold",
-			"stroke-width" => "5.0"
-		),
-		events=["mouseover"]
-	),
-	curveType=BasisClosed
-)
-], "line_example";
-	d3Attributes=D3Attributes(;
-		attributes=Dict(
-			"viewBox" => "0 0 300 300"
-		),
-		style=Dict(
-			"width" => "300",
-			"height" => "300"
-		)
-))
 
-# ╔═╡ cde1711a-6425-4c6a-b20e-6084dce044e8
-@only_in_nb begin
-	if hoveraction |> keys |> isempty
-		md"# 😐"
-	elseif !haskey(hoveraction, "1-mouseover")
-		if hoveraction["0-mouseover"]["count"] > 10
-			md"# 😀"
-		else
-			md"# 😊"
-		end
-	elseif hoveraction["1-mouseover"]["count"] > 10
-		md"# 😭"
-	else
-		md"# 😥"
-	end
-end
+# ╔═╡ 94478d85-7d0e-44e0-bf13-a8a84a2ad83d
+@only_in_nb lineev
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -177,7 +156,7 @@ PlutoUI = "~0.7.37"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.7.1"
+julia_version = "1.7.2"
 manifest_format = "2.0"
 
 [[deps.AbstractPlutoDingetjes]]
@@ -426,10 +405,12 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╠═5984fc30-37d1-4e6d-beab-2233c928173d
 # ╟─abec8fbc-e87e-484a-8386-f133d28eacab
 # ╠═92161843-357d-47ac-8da3-27b134b22084
+# ╠═d68ffecb-be5c-487c-8e22-7851312e9aa7
+# ╠═9602bfaf-b079-429f-ad60-71d24b882998
 # ╟─ba53d4cc-b096-4fb8-86f3-ee8648c10cea
-# ╠═0b664967-afb7-4b6f-904d-0ebcc43e1b00
+# ╠═19a6176a-9a60-4e6c-86e0-38303bb78813
 # ╠═99fdeb31-01b8-4be5-bb42-fcc4f2da91ef
-# ╠═cde1711a-6425-4c6a-b20e-6084dce044e8
-# ╠═1a2da5d5-5908-4abd-a7bb-1fa3da814cee
+# ╠═94478d85-7d0e-44e0-bf13-a8a84a2ad83d
+# ╠═0a27990c-f78e-4e10-875c-bbb07a2712a6
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

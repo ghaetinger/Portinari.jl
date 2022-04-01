@@ -1,8 +1,18 @@
 ### A Pluto.jl notebook ###
-# v0.18.1
+# v0.18.4
 
 using Markdown
 using InteractiveUtils
+
+# This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
+macro bind(def, element)
+    quote
+        local iv = try Base.loaded_modules[Base.PkgId(Base.UUID("6e696c72-6542-2067-7265-42206c756150"), "AbstractPlutoDingetjes")].Bonds.initial_value catch; b -> missing; end
+        local el = $(esc(element))
+        global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : iv(el)
+        el
+    end
+end
 
 # ╔═╡ 2f76b33d-fa26-4b3d-9d78-78cc65e99b7e
 using AbstractPlutoDingetjes, HypertextLiteral, Parameters, PlutoUI, PlutoDevMacros
@@ -14,7 +24,7 @@ using AbstractPlutoDingetjes, HypertextLiteral, Parameters, PlutoUI, PlutoDevMac
 md"# Ingredients"
 
 # ╔═╡ 40896e22-e6a0-4dfb-b202-9764de200d79
-@plutoinclude "./linear_scale.jl" "all"
+@plutoinclude "./axis2D.jl" "all"
 
 # ╔═╡ 93ede436-8e57-4030-93ae-74567844f624
 md"# Area"
@@ -32,24 +42,19 @@ md"## Structure"
 begin
   struct Area <: D3Component
     data         :: Vector{NamedTuple{(:x, :y0, :y1), Tuple{<:Real, <:Real, <:Real}}}
-	scaleX       :: LinearScale
-	scaleY       :: LinearScale
 	d3Attributes :: D3Attributes
 	curveType    :: Curve
+	id           :: String
   end
 
-  Area(x, y0, y1;
-        cwidth=100,
-        cheight=100,
-        offset=0,
-        d3Attributes=D3Attributes(),
-	    curveType=Natural
+  Area(x::Vector{}, y0::Vector{}, y1::Vector{}, id::String;
+	d3Attributes=D3Attributes(),
+	curveType=Natural
   ) = Area(
 	  [(x=x[i], y0=y0[i], y1=y1[i]) for i ∈ 1:length(x)],
-	  LinearScale(x, cwidth, offset),
-	  LinearScale(y1, cheight, offset),
 	  d3Attributes,
-	  curveType
+	  curveType,
+	  id
   )
 end;
 
@@ -59,8 +64,14 @@ md"## Javascript Snippet"
 # ╔═╡ 1d601e35-6cac-4473-b476-9fc4aa320937
 Base.show(io::IO, m::MIME"text/javascript", area::Area) =
 	show(io, m, @js """
-    	const xScale = $(area.scaleX)();
-    	const yScale = $(area.scaleY)();
+	    const span = document.getElementById($(area.id));
+		span = span == null ? _span : span;
+		span.value = span.value || {};
+		span.dispatchEvent(new CustomEvent("input"));
+
+		xScale = xScale || $(Axis((x->x.x).(area.data), [50, 250], Bottom))(s)[0];
+		yScale = yScale || $(Axis((x->x.y1).(area.data), [50, 250], Left))(s)[0];
+	
     	const path = d3.area()
 					   .x(d => xScale(d.x))
       				   .y0(d => yScale(d.y0))
@@ -68,13 +79,31 @@ Base.show(io::IO, m::MIME"text/javascript", area::Area) =
       				   .curve(d3.$(area.curveType))
 
 		const data = $(area.data);
-    	s.selectAll(".line-" + id)
+    	s.selectAll(".area-" + id)
 	     .data([data])
      	 .join("path")
      	 $(area.d3Attributes)
      	 .attr("d", path)
-     	 .attr("class", "line-" + id)
+     	 .attr("class", "area-" + id)
 	""")
+
+# ╔═╡ c0fda2f7-a893-496c-8798-3a84a0c92d5a
+Base.show(io::IO, m::MIME"text/html", area::Area) =	show(io, m, @htl("""
+	<span id=$(area.id)>
+	<script id="preview-$(area.id)">
+	const svg = this == null ? DOM.svg(300, 300) : this;
+	const s = this == null ? d3.select(svg) : this.s;
+
+	var xScale, yScale;
+	
+	$(area)(s, 0, currentScript.parentElement);
+
+	const output = svg
+	output.s = s
+	return output
+	</script>
+	</span>
+"""))
 
 # ╔═╡ c9bed508-ea77-4ae4-8876-ac2a5ec62114
 Base.show(io::IO,  m::MIME"text/javascript", curve::Curve) = Base.show(io, m, HypertextLiteral.JavaScript("curve" * string(curve)))
@@ -88,19 +117,11 @@ md"# Example"
 # ╔═╡ 05b7122e-96fe-479c-a7a8-a6070e93d775
 @only_in_nb y = [rand() for _ ∈ x]
 
+# ╔═╡ b76623bc-53a6-4a90-b11b-266d1caac640
+@only_in_nb @bind areaevents area = Area(x, y, y .* 2, "area-id"; d3Attributes=D3Attributes(events=["mouseover"]))
+
 # ╔═╡ 9f2fd77e-1810-4f1a-891b-b2e460e8489a
-@only_in_nb D3Canvas([Area(x, y, y .* 2;
-    cwidth=300,
-	cheight=300,
-	offset=50,
-	d3Attributes=D3Attributes(;
-		attributes=Dict(
-			"fill" => "orange",
-			"stroke" => "gold",
-			"stroke-width" => "5.0"
-		)
-	)
-)], "area_example"; d3Attributes=D3Attributes(;
+@only_in_nb D3Canvas([area], "area_example"; d3Attributes=D3Attributes(;
 	attributes=Dict(
 		"viewBox" => "0 0 300 300"
 	),
@@ -109,6 +130,9 @@ md"# Example"
 		"height" => "300"
 	)
 ))
+
+# ╔═╡ ef8033bd-27e3-45bf-acc7-330f40ec144a
+@only_in_nb areaevents["mouseover"]["count"]
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -131,7 +155,7 @@ PlutoUI = "~0.7.37"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.7.1"
+julia_version = "1.7.2"
 manifest_format = "2.0"
 
 [[deps.AbstractPlutoDingetjes]]
@@ -373,16 +397,19 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╠═2f76b33d-fa26-4b3d-9d78-78cc65e99b7e
 # ╠═40896e22-e6a0-4dfb-b202-9764de200d79
 # ╟─93ede436-8e57-4030-93ae-74567844f624
-# ╠═a6ef4beb-dd0d-4517-8382-30bbdfb685cc
+# ╟─a6ef4beb-dd0d-4517-8382-30bbdfb685cc
 # ╠═3bf51d0b-5d80-4321-9ecb-6680c70fffec
 # ╠═c9bed508-ea77-4ae4-8876-ac2a5ec62114
 # ╟─73005a4c-7d7a-41b6-ad8c-52780d51f24c
 # ╠═6a107d2b-96db-465a-8582-0c6ab5699043
-# ╠═f1e2da3f-71b2-48a1-a51b-cd1ae6fac89c
+# ╟─f1e2da3f-71b2-48a1-a51b-cd1ae6fac89c
 # ╠═1d601e35-6cac-4473-b476-9fc4aa320937
+# ╠═c0fda2f7-a893-496c-8798-3a84a0c92d5a
 # ╟─354f2549-8d20-4ac3-a6f0-5acf1ad4fde4
 # ╠═12ac3f7f-c1a4-4575-b7f8-82684175b921
 # ╠═05b7122e-96fe-479c-a7a8-a6070e93d775
+# ╠═b76623bc-53a6-4a90-b11b-266d1caac640
 # ╠═9f2fd77e-1810-4f1a-891b-b2e460e8489a
+# ╠═ef8033bd-27e3-45bf-acc7-330f40ec144a
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
