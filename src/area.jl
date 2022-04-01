@@ -24,7 +24,7 @@ using AbstractPlutoDingetjes, HypertextLiteral, Parameters, PlutoUI, PlutoDevMac
 md"# Ingredients"
 
 # ╔═╡ 40896e22-e6a0-4dfb-b202-9764de200d79
-@plutoinclude "./axis2D.jl" "all"
+@plutoinclude "./context.jl" "all"
 
 # ╔═╡ 93ede436-8e57-4030-93ae-74567844f624
 md"# Area"
@@ -58,6 +58,13 @@ begin
   )
 end;
 
+# ╔═╡ b7c8ca6e-bec8-43a7-a3c9-8ad09d017e5e
+function bounds(area::Area)
+	xs = (v -> v.x).(data)
+	ys = reduce(vcat, (v -> [v.y0, v.y1]).(data)) 
+	return (minx=minimum(xs), miny=minimum(ys), maxx=maximum(xs), maxy=maximum(ys))
+end
+
 # ╔═╡ f1e2da3f-71b2-48a1-a51b-cd1ae6fac89c
 md"## Javascript Snippet"
 
@@ -65,7 +72,6 @@ md"## Javascript Snippet"
 Base.show(io::IO, m::MIME"text/javascript", area::Area) =
 	show(io, m, @js """
 	    const span = document.getElementById($(area.id));
-		span = span == null ? _span : span;
 		span.value = span.value || {};
 		span.dispatchEvent(new CustomEvent("input"));
 
@@ -91,6 +97,9 @@ Base.show(io::IO, m::MIME"text/javascript", area::Area) =
 Base.show(io::IO, m::MIME"text/html", area::Area) =	show(io, m, @htl("""
 	<span id=$(area.id)>
 	<script id="preview-$(area.id)">
+
+	const { d3 } = $(import_local_js(d3_import));
+
 	const svg = this == null ? DOM.svg(300, 300) : this;
 	const s = this == null ? d3.select(svg) : this.s;
 
@@ -402,6 +411,7 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╠═c9bed508-ea77-4ae4-8876-ac2a5ec62114
 # ╟─73005a4c-7d7a-41b6-ad8c-52780d51f24c
 # ╠═6a107d2b-96db-465a-8582-0c6ab5699043
+# ╠═b7c8ca6e-bec8-43a7-a3c9-8ad09d017e5e
 # ╟─f1e2da3f-71b2-48a1-a51b-cd1ae6fac89c
 # ╠═1d601e35-6cac-4473-b476-9fc4aa320937
 # ╠═c0fda2f7-a893-496c-8798-3a84a0c92d5a

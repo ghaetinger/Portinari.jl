@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.18.4
+# v0.18.2
 
 using Markdown
 using InteractiveUtils
@@ -9,6 +9,12 @@ using HypertextLiteral, PlutoUI, Parameters, PlutoDevMacros
 
 # ╔═╡ 320477a5-77ad-40b3-bccd-37a06c06c22e
 @only_in_nb TableOfContents()
+
+# ╔═╡ b1d3d2ca-aa67-47de-a2a8-6119f3ca4e46
+md"# Ingredients"
+
+# ╔═╡ bad43269-199b-4176-8548-8a963268cb46
+@plutoinclude "./js_base.jl" "all"
 
 # ╔═╡ 09e4ee53-b8b7-4de0-9439-d1bc7bc22578
 md"# Javascript Snippet macro"
@@ -28,7 +34,7 @@ begin
 	function Base.show(io::IO, m::MIME"text/javascript", r::RenderWithoutScriptTags)
 		full_result = repr(MIME"text/html"(), r.x; context=io)
 		write(io, 
-			"((s, id=0, _span=undefined, disallow_animation=false) => {" * full_result[1+length("<script>"):end-length("</script>")] * "})"
+			"((s, id=0, _span=undefined, disallow_animation=false, transform=d3.zoomIdentity) => {" * full_result[1+length("<script>"):end-length("</script>")] * "})"
 		)
 	end
 end
@@ -101,11 +107,26 @@ Base.show(io::IO, m::MIME"text/javascript", d3attrs::D3Attributes) =
 		)
 	)
 
+# ╔═╡ 8803b1d9-a29c-4b4c-b5bc-93a78561a70f
+begin
+	struct PublishToJS
+	x
+	end
+	function Base.show(io::IO, m::MIME"text/javascript", ptj::PublishToJS)
+		Base.show(io, m, Main.PlutoRunner.publish_to_js(ptj.x))
+	end
+	better_publish_to_js(x) = PublishToJS(x)
+end
+
 # ╔═╡ b5110c15-0b46-4450-b8d2-9a83f7aeef54
 md"## D3 Component Type"
 
 # ╔═╡ c06a51f5-224a-4ffa-87a7-d5f39a1a4bb5
 abstract type D3Component end
+
+# ╔═╡ 37f3557c-0d82-464d-9f36-847eceebaae6
+Base.extrema(component::D3Component) =
+	error("Extrema not implemented for type $(typeof(component))")
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -365,11 +386,14 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╔═╡ Cell order:
 # ╠═774bb4f2-963e-11ec-30ff-e3394f52858b
 # ╟─320477a5-77ad-40b3-bccd-37a06c06c22e
+# ╟─b1d3d2ca-aa67-47de-a2a8-6119f3ca4e46
+# ╠═bad43269-199b-4176-8548-8a963268cb46
 # ╟─09e4ee53-b8b7-4de0-9439-d1bc7bc22578
 # ╠═4d193bff-9ed2-42ba-9cef-4d8c9abc8332
 # ╠═c9458743-0471-430e-b7a5-e26a2ccb5811
 # ╠═279012f1-b67a-4fac-a169-34dbe47e4638
 # ╠═227f7480-a39d-4692-9874-ff9328e4080a
+# ╠═8803b1d9-a29c-4b4c-b5bc-93a78561a70f
 # ╟─e3156da9-8603-41f9-ad41-03eaf79c4540
 # ╟─793e2198-560d-461c-a9c4-40e042eab790
 # ╠═44721f68-c05e-4d6d-a721-6809a4ab72f8
@@ -379,5 +403,6 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╠═d544a9cc-4412-4b7d-a223-5bb181b595bb
 # ╟─b5110c15-0b46-4450-b8d2-9a83f7aeef54
 # ╠═c06a51f5-224a-4ffa-87a7-d5f39a1a4bb5
+# ╠═37f3557c-0d82-464d-9f36-847eceebaae6
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

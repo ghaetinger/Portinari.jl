@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.18.4
+# v0.18.2
 
 using Markdown
 using InteractiveUtils
@@ -14,13 +14,19 @@ using AbstractPlutoDingetjes, HypertextLiteral, Parameters, PlutoUI, PlutoDevMac
 md"# Ingredients"
 
 # ╔═╡ 01e347d4-a998-476a-a549-bbd591330439
-@plutoinclude "./canvas.jl" "all"
+@plutoinclude "./d3_abstractions.jl" "all"
 
 # ╔═╡ 0a077719-b3a6-4393-818e-736c624d3caa
 md"# Axis"
 
 # ╔═╡ 9d8a1b6d-d2ae-4654-a341-663262a5c97f
 md"## Positions"
+
+# ╔═╡ 54dd4348-f96e-4621-93a9-6d29585e300c
+md"### Orientation"
+
+# ╔═╡ d4d8079a-8e80-4f8c-a741-c7882cf95c0f
+@enum Orientation Horizontal Vertical
 
 # ╔═╡ 15dfc897-41ba-453e-a2f8-8aaf8b26985d
 md"### Horizontal"
@@ -45,39 +51,137 @@ Base.show(io::IO, m::MIME"text/javascript", pos::VDir) =
 # ╔═╡ 6b95627d-0d5a-455a-b9d8-f29bf23c4e9d
 md"## Structure"
 
+# ╔═╡ 0b4accf0-16a1-4985-9723-f8f1a879506c
+md"## Javascript Snippet"
+
+# ╔═╡ 9df4facb-6862-4898-aa04-ae944c94969f
+md"# Context"
+
+# ╔═╡ 6fdebb9a-3053-4699-bd3b-6fa4c43c3283
+md"## Structure"
+
+# ╔═╡ 2bc3ddd7-1a16-4dcc-a029-555697987f17
+begin
+function Base.extrema(children::Vector{<:D3Component})
+	extremas = (Base.extrema).(children)
+	minxs = (v -> v.minx).(extremas)
+	minys = (v -> v.miny).(extremas)
+	maxxs = (v -> v.maxx).(extremas)
+	maxys = (v -> v.maxy).(extremas)
+
+	return (
+		minx=minimum(minxs),
+		miny=minimum(minys),
+		maxx=maximum(maxxs),
+		maxy=maximum(maxys)
+	)
+end
+end
+
+# ╔═╡ b1efe9b3-45fc-48b2-b754-ade9938647d3
+begin	
+	# Axis not defined??
+	struct Context <: D3Component
+		hAxis         
+		vAxis         
+		children     #:: Vector{<:D3Component}
+		d3Attributes :: D3Attributes
+		mods         :: Vector{Function}
+		id           :: String
+		width        
+		height       
+  	end
+
+	function Context(
+		children::Vector{<:D3Component}, id::String;
+		hAxis=missing, vAxis=missing,
+		d3Attributes=D3Attributes(),
+		mods=[],
+		width=300.0,
+		height=300.0,
+		offset=[0.0, 0.0]
+	)
+		child_bounds = Base.extrema(children)
+		hAxis = ismissing(hAxis) ? Axis(
+			[child_bounds.minx, child_bounds.maxx], 0.8, Bottom; offset=offset
+		) : hAxis
+		vAxis = ismissing(vAxis) ? Axis(
+			[child_bounds.miny, child_bounds.maxy], 0.8, Right; orientation=Vertical, offset=offset
+		) : vAxis
+		Context(hAxis, vAxis, children, d3Attributes, mods, id, width, height)
+	end
+		
+	function Base.extrema(ctx::Context)
+		Base.extrema(ctx.children)
+	end
+end
+
 # ╔═╡ b0e3453f-45c0-465b-9df5-476a7d6ff42f
 begin
-	struct Axis{T} <: D3Component where T
-  		domain       :: Tuple{T, T}
-		range        :: Tuple{T, T}
+	struct Axis{Orientation} <: D3Component where T
+  		domain       :: Tuple{<:Number, <:Number}
+		range        :: Tuple{<:Number, <:Number}
 		show         :: Bool
 		direction    :: Union{HDir, VDir}
 		d3Attributes :: D3Attributes
  	 end
 
   	function Axis(
-	  			values::Vector{T}, range, dir::Union{HDir, VDir};
+	  			values::Vector{<:Number}, range, dir::Union{HDir, VDir};
 				d3Attributes=D3Attributes(),
-  				show=false
-  	) where T <: Real
-		domain = extrema(values)
-		Axis(domain, range |> Tuple .|> T, show, dir, d3Attributes)
+  				show=false, orientation=Horizontal
+  	)
+		domain = Base.extrema(values)
+		Axis{orientation}(domain, range |> Tuple, show, dir, d3Attributes)
   	end
 
-	function Axis(values::Vector{<:Real}, size::T, offset::T, dir::Union{HDir, VDir}; d3Attributes=D3Attributes(), show=false) where T <: Real
-		Axis(values, [offset, size-offset], dir; d3Attributes=d3Attributes, show=show)
-  end
+	function Axis(values::Vector{<:Number}, size::Number, dir::Union{HDir, VDir};
+	offset::Vector{<:Number}=(0.0, 0.0), d3Attributes=D3Attributes(), show=false, orientation=Horizontal)
+		Axis(values, [offset[1], size-offset[2]], dir; d3Attributes=d3Attributes, show=show, orientation=orientation)
+	end
+
+	HAxis(arguments...; extra...) =
+		Axis(arguments...; merge((;extra...), (;orientation=Horizontal))...)
+	
+	VAxis(arguments...; extra...) =
+		Axis(arguments...; merge((;extra...), (;orientation=Vertical))...)
 end
 
-# ╔═╡ 0b4accf0-16a1-4985-9723-f8f1a879506c
-md"## Javascript Snippet"
-
 # ╔═╡ c60565ba-7ec1-482f-8086-4d800acd9520
-function Base.show(io::IO, m::MIME"text/javascript", axis::Axis) 
+begin
+function Base.show(io::IO, m::MIME"text/javascript", axis::Axis{Horizontal}) 
 show(io, m, @js("""
-    const scale = d3.scaleLinear()
+	var size = xRange[1] - xRange[0];
+	xRange = [$(axis.range[1]) * size + xRange[0], $(axis.range[2]) * size + xRange[0]];   
+	const scale = d3.scaleLinear()
       .domain($([axis.domain...]))
-      .range($([axis.range...]));
+      .range(xRange);
+
+	var axis_descr = d3.$(axis.direction)()
+    	               .scale(scale);
+
+	const axis = s.selectAll(".axis-" + id)
+       	          .data([1])
+         		  .join("g")
+		 		  .attr("class", "axis-" + id)
+         		  .call(axis_descr);
+
+	if ($(!axis.show)) {
+		axis.style("visibility", "hidden");
+	}
+
+
+    return [scale, axis]
+"""))
+end
+
+function Base.show(io::IO, m::MIME"text/javascript", axis::Axis{Vertical})
+show(io, m, @js("""
+	var size = yRange[1] - yRange[0];
+	yRange = [$(axis.range[1]) * size + yRange[0], $(axis.range[2]) * size + yRange[0]];
+	const scale = d3.scaleLinear()
+      .domain($([axis.domain...]))
+      .range(yRange);
 
 	var axis_descr = d3.$(axis.direction)()
     	               .scale(scale);
@@ -95,68 +199,66 @@ show(io, m, @js("""
     return [scale, axis]
 """))
 end
-
-# ╔═╡ 9df4facb-6862-4898-aa04-ae944c94969f
-md"# Axis 2D"
-
-# ╔═╡ 6fdebb9a-3053-4699-bd3b-6fa4c43c3283
-md"## Structure"
-
-# ╔═╡ b1efe9b3-45fc-48b2-b754-ade9938647d3
-begin	
-	struct Axis2D <: D3Component
-		horizontal   :: Axis
-		vertical     :: Axis
-		children     :: Vector{<:D3Component}
-		d3Attributes :: D3Attributes
-		mods         :: Vector{Function}
-		id           :: String
-  	end
-end;
+end
 
 # ╔═╡ 28c2fbc1-fa21-4ace-86c8-d085f19af466
 md"## Javascript Snippet"
 
 # ╔═╡ baa7bf03-77f8-4fa1-9635-df02629cfe01
-function Base.show(io::IO, m::MIME"text/javascript", axis_2d::Axis2D) 
+function Base.show(io::IO, m::MIME"text/javascript", ctx::Context) 
 show(io, m, @js("""
-	const g = s.selectAll(".axis2d-" + id)
+
+	var bufXRange = xRange;
+	var bufYRange = yRange;
+
+	const g = s.selectAll(".ctx-" + $(ctx.id) + id)
          	   .data([1])
-         	   .join("g")
-			   .attr("class", "axis2d-" + id);
+         	   .join("svg")
+			   .attr("class", "ctx-" + $(ctx.id) + id);
 
-	var [xScale, xAxis] = $(axis_2d.horizontal)(g, 0);
-	var [yScale, yAxis] = $(axis_2d.vertical)(g, 1);
+	[xScale, xAxis] = $(ctx.hAxis)(g, 0);
+	[yScale, yAxis] = $(ctx.vAxis)(g, 1);
 
-	var comp_foos = $(axis_2d.children);
+	xScale = transform.rescaleX(xScale);
+	yScale = transform.rescaleY(yScale);
+
+	var comp_foos = $(ctx.children);
 
 	for (var i = 0; i < comp_foos.length; i++) {
-		comp_foos[i](g, i + 2, _span);
+		comp_foos[i](g, $(ctx.id) + (i + 2), _span, disallow_animation);
 	}
 
-	g$(axis_2d.d3Attributes);
+	g$(ctx.d3Attributes);
 
-	const mods = $([mod(axis_2d) for mod ∈ axis_2d.mods]);
+	const mods = $([mod(ctx) for mod ∈ ctx.mods]);
 
 	for (var i = 0; i < mods.length; i++) {
 		mods[i](g);
 	}
+
+	xRange = bufXRange;
+	yRange = bufYRange;
 
 	return [xScale, yScale];
 """))
 end
 
 # ╔═╡ 2b0b5165-776a-4d1f-9151-19465d75124c
-Base.show(io::IO, m::MIME"text/html", axis_2d::Axis2D) =
+Base.show(io::IO, m::MIME"text/html", ctx::Context) =
 	show(io, m, @htl("""
-	<span id=$(axis_2d.id)>
-	<script id="preview-$(axis_2d.id)">
-	const svg = this == null ? DOM.svg(600, 300) : this;
+	<span id=$(ctx.id)>
+	<script id="context-$(ctx.id)">
+
+	const { d3 } = $(import_local_js(d3_import));
+	
+	const svg = this == null ? DOM.svg($(ctx.width), $(ctx.height)) : this;
 	const s = this == null ? d3.select(svg) : this.s;
 
-	var xScale, yScale;
+	var xScale, xAxis, yScale, yAxis, xRange, yRange;
+	xRange = [0, $(ctx.width)];
+	yRange = [0, $(ctx.height)];
 
-	$(axis_2d)(s, 0, currentScript.parentElement);
+	$(ctx)(s, 0, currentScript.parentElement);
 
 	const output = svg
 	output.s = s
@@ -169,7 +271,7 @@ Base.show(io::IO, m::MIME"text/html", axis_2d::Axis2D) =
 md"# Modifier functions"
 
 # ╔═╡ 6b0ce571-1f96-40a7-839c-c0ae2efb3107
-function zoom(axis_2d::Axis2D)
+function zoom(ctx::Context)
 	@js("""
 		var zoom = d3.zoom()
 		.on("zoom", updateChart);
@@ -183,11 +285,11 @@ function zoom(axis_2d::Axis2D)
 			xScale = event.transform.rescaleX(xScale);
     		yScale = event.transform.rescaleY(yScale);
 
-    		xAxis.call(d3.$(axis_2d.horizontal.direction)(xScale))
-    		yAxis.call(d3.$(axis_2d.vertical.direction)(yScale))
+    		xAxis.call(d3.$(ctx.hAxis.direction)(xScale))
+    		yAxis.call(d3.$(ctx.vAxis.direction)(yScale))
 
 			for (var i = 0; i < comp_foos.length; i++) {
-				comp_foos[i](s, i + 2, _span, true);
+				comp_foos[i](s, $(ctx.id) + (i + 2), _span, true, event.transform);
 			}
 	
 			xScale = constXScale;
@@ -455,11 +557,13 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 
 # ╔═╡ Cell order:
 # ╟─5ee4e18c-8a03-41c8-ab2c-2c3ff430f5f8
-# ╠═652695a3-5c8b-4cea-b79c-fe1192df8527
+# ╟─652695a3-5c8b-4cea-b79c-fe1192df8527
 # ╠═0cde3f18-6b7e-4c96-a09e-b5419d481053
 # ╠═01e347d4-a998-476a-a549-bbd591330439
 # ╟─0a077719-b3a6-4393-818e-736c624d3caa
 # ╟─9d8a1b6d-d2ae-4654-a341-663262a5c97f
+# ╟─54dd4348-f96e-4621-93a9-6d29585e300c
+# ╠═d4d8079a-8e80-4f8c-a741-c7882cf95c0f
 # ╟─15dfc897-41ba-453e-a2f8-8aaf8b26985d
 # ╠═8b0b7d98-1fcf-4539-b7bd-91f683600ed2
 # ╠═dfeade78-3b1d-4b58-8501-71a6a3c39ec3
@@ -473,6 +577,7 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╟─9df4facb-6862-4898-aa04-ae944c94969f
 # ╟─6fdebb9a-3053-4699-bd3b-6fa4c43c3283
 # ╠═b1efe9b3-45fc-48b2-b754-ade9938647d3
+# ╠═2bc3ddd7-1a16-4dcc-a029-555697987f17
 # ╟─28c2fbc1-fa21-4ace-86c8-d085f19af466
 # ╠═baa7bf03-77f8-4fa1-9635-df02629cfe01
 # ╠═2b0b5165-776a-4d1f-9151-19465d75124c

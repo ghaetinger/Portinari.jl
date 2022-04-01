@@ -45,8 +45,10 @@ md"## Javascript Snippet"
 Base.show(io::IO, m::MIME"text/html", canvas::D3Canvas) =
 	Base.show(io, m, @htl("""
 <span>
-<script src="https://cdn.jsdelivr.net/npm/d3@6.2.0/dist/d3.min.js"></script>
 <script id="canvas-$(canvas.id)">
+
+	const { d3 } = $(import_local_js(d3_import));
+	
     const span = currentScript.parentElement;
 	const svg = this == null ? DOM.svg($(canvas.initWidth),$(canvas.initHeight)) : this;
 	const s = this == null ? d3.select(svg) : this.s;

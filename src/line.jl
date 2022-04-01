@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.18.4
+# v0.18.2
 
 using Markdown
 using InteractiveUtils
@@ -24,7 +24,7 @@ PlutoUI.TableOfContents()
 md"# Ingredients"
 
 # ╔═╡ 59597ab2-369e-4a9f-921a-d63649d1bba4
-@plutoinclude "./axis2D.jl" "all"
+@plutoinclude "./context.jl" "all"
 
 # ╔═╡ b30f2165-0980-42c9-a3cf-e36033083a2a
 md"# Line"
@@ -58,6 +58,13 @@ begin
   )
 end;
 
+# ╔═╡ e2ef20fd-ba3d-4c4b-9d1d-ea8f64a3b48d
+function Base.extrema(line::Line)
+	xs = (v -> v.x).(line.data)
+	ys = (v -> v.y).(line.data)
+	return (minx=minimum(xs), miny=minimum(ys), maxx=maximum(xs), maxy=maximum(ys))
+end
+
 # ╔═╡ abec8fbc-e87e-484a-8386-f133d28eacab
 md"## Javascript Snippet"
 
@@ -69,8 +76,8 @@ Base.show(io::IO, m::MIME"text/javascript", line::Line) =
 		span.value = span.value || {};
 		span.dispatchEvent(new CustomEvent("input"));
 
-		xScale = xScale || $(Axis((x->x.x).(line.data), [50, 250], Bottom))(s)[0];
-		yScale = yScale || $(Axis((x->x.y).(line.data), [50, 250], Left))(s)[0];
+		xScale = xScale || $(HAxis((x->x.x).(line.data), [0.1, 0.9], Bottom))(s)[0];
+		yScale = yScale || $(VAxis((x->x.y).(line.data), [0.1, 0.9], Left))(s)[0];
 	
     	const path = d3.line()
 					   .x(d => xScale(d.x))
@@ -90,10 +97,15 @@ Base.show(io::IO, m::MIME"text/javascript", line::Line) =
 Base.show(io::IO, m::MIME"text/html", line::Line) =	show(io, m, @htl("""
 	<span id=$(line.id)>
 	<script id="preview-$(line.id)">
+
+	const { d3 } = $(import_local_js(d3_import));
+
 	const svg = this == null ? DOM.svg(600, 300) : this;
 	const s = this == null ? d3.select(svg) : this.s;
 
-	var xScale, yScale;
+	var xScale, xAxis, yScale, yAxis, xRange, yRange;
+	xRange = [0, 600];
+	yRange = [0, 300];
 
 	$(line)(s, 0, currentScript.parentElement);
 
@@ -113,27 +125,82 @@ Bonds.initial_value(line::Line) = (;)
 # ╔═╡ ba53d4cc-b096-4fb8-86f3-ee8648c10cea
 md"# Example"
 
+# ╔═╡ 93677f4d-c031-4432-8705-56575e20515b
+sz_ui = @bind sz Slider(1:10)
+
 # ╔═╡ 19a6176a-9a60-4e6c-86e0-38303bb78813
-@only_in_nb x = rand(5)
+@only_in_nb x = collect(1:sz+1)
 
 # ╔═╡ 99fdeb31-01b8-4be5-bb42-fcc4f2da91ef
-@only_in_nb y = [rand() for _ ∈ x]
+@only_in_nb y = vcat([1], [rand() for _ ∈ (1:sz)])
 
 # ╔═╡ 0a27990c-f78e-4e10-875c-bbb07a2712a6
 @only_in_nb @bind lineev line = Line(x, y, "line_id";
 	d3Attributes=D3Attributes(;
 		attributes=Dict(
 			"fill" => "none",
-			"stroke" => "red",
-			"stroke-width" => "15.0"
+			#"stroke" => "white",
+			"stroke-width" => "5.0"
 		),
-		events=["click"]
+		#events=["click", "mouseover"]
 	),
-	curveType=BasisClosed
+	curveType=Basis
 )
 
 # ╔═╡ 94478d85-7d0e-44e0-bf13-a8a84a2ad83d
 @only_in_nb lineev
+
+# ╔═╡ d9fa1ef9-210d-4dac-a85f-eeeedeb27477
+tl = Context([line], "abc"; width=500, height=600, d3Attributes=D3Attributes(style=Dict("stroke" => "red")),
+hAxis=HAxis(x, 0.5, Bottom; offset=[0.0, 0.0], show=false),
+vAxis=VAxis(y, 0.5, Right; offset=[0.0, 0.0], show=false)
+);
+
+# ╔═╡ 27758c08-8e34-4cf3-8acd-edae9e7b321c
+tr = Context([line], "abc"; width=500, height=600, d3Attributes=D3Attributes(style=Dict("stroke" => "green")),
+hAxis=HAxis(x, -0.5, Bottom; offset=[1.0, -1.0], show=false),
+vAxis=VAxis(y, 0.5, Right; offset=[0.0, 0.0], show=false)
+);
+
+# ╔═╡ 4620d47b-4eea-40dc-8f4d-d2ac36cd3b3e
+bl = Context([line], "abc"; width=500, height=600, d3Attributes=D3Attributes(style=Dict("stroke" => "aqua")),
+hAxis=HAxis(x, 0.5, Bottom; offset=[0.0, 0.0], show=false),
+vAxis=VAxis(y, -0.5, Right; offset=[1.0, -1.0], show=false)
+);
+
+# ╔═╡ 9d36bcf1-4a61-499e-932f-1a5c9a55a061
+br = Context([line], "abc"; width=500, height=600, d3Attributes=D3Attributes(style=Dict("stroke" => "gold")),
+hAxis=HAxis(x, -0.5, Bottom; offset=[1.0, -1.0], show=false),
+vAxis=VAxis(y, -0.5, Right; offset=[1.0, -1.0], show=false)
+);
+
+# ╔═╡ 184ad798-32b5-4261-a961-626385aba1e4
+block = Context([tl, tr, bl, br], "new"; width=600, height=600,
+hAxis=HAxis(x, 1.0, Bottom; offset=[0.0, 0.0], show=false),
+vAxis=VAxis(y, 1.0, Right; offset=[0.0, 0.0], show=false)
+);
+
+# ╔═╡ 19a4ce7c-bcd6-4627-a159-2ee313596fcf
+Context([
+	Context([block], "inner1";
+		hAxis=HAxis(x, 0.5, Bottom; offset=[0.0, 0.0], show=false),
+		vAxis=VAxis(y, 0.5, Right; offset=[0.0, 0.0], show=false)
+	),
+	Context([block], "inner2";
+		hAxis=HAxis(x, 1.0, Bottom; offset=[0.5, 0.0], show=false),
+		vAxis=VAxis(y, 0.5, Right; offset=[0.0, 0.0], show=false)
+	),
+	
+	Context([block], "inner3";
+		hAxis=HAxis(x, 0.5, Bottom; offset=[0.0, 0.0], show=false),
+		vAxis=VAxis(y, 1.0, Right; offset=[0.5, 0.0], show=false)
+	),
+	
+	Context([block], "inner4";
+		hAxis=HAxis(x, 1.0, Bottom; offset=[0.5, 0.0], show=false),
+		vAxis=VAxis(y, 1.0, Right; offset=[0.5, 0.0], show=false)
+	)
+], "outer"; width=600, mods=[zoom])
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -403,6 +470,7 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╠═a8697379-6c24-4357-909c-42d2e92798a5
 # ╟─cf44495e-6bb9-456b-bcd5-a06b7b6e2d0e
 # ╠═5984fc30-37d1-4e6d-beab-2233c928173d
+# ╠═e2ef20fd-ba3d-4c4b-9d1d-ea8f64a3b48d
 # ╟─abec8fbc-e87e-484a-8386-f133d28eacab
 # ╠═92161843-357d-47ac-8da3-27b134b22084
 # ╠═d68ffecb-be5c-487c-8e22-7851312e9aa7
@@ -412,5 +480,12 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╠═99fdeb31-01b8-4be5-bb42-fcc4f2da91ef
 # ╠═94478d85-7d0e-44e0-bf13-a8a84a2ad83d
 # ╠═0a27990c-f78e-4e10-875c-bbb07a2712a6
+# ╠═d9fa1ef9-210d-4dac-a85f-eeeedeb27477
+# ╠═27758c08-8e34-4cf3-8acd-edae9e7b321c
+# ╠═4620d47b-4eea-40dc-8f4d-d2ac36cd3b3e
+# ╠═9d36bcf1-4a61-499e-932f-1a5c9a55a061
+# ╠═184ad798-32b5-4261-a961-626385aba1e4
+# ╠═93677f4d-c031-4432-8705-56575e20515b
+# ╠═19a4ce7c-bcd6-4627-a159-2ee313596fcf
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

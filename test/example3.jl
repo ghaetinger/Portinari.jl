@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.18.4
+# v0.18.2
 
 using Markdown
 using InteractiveUtils
@@ -64,7 +64,7 @@ D3Canvas([axis, line], "canv"; d3Attributes=D3Attributes(style=Dict("width" => "
 
 # ╔═╡ Cell order:
 # ╠═40ce97fc-aed8-11ec-381d-39c142fc0c6b
-# ╟─27d8844f-48fd-4daa-a9fd-97fb1ee088f7
+# ╠═27d8844f-48fd-4daa-a9fd-97fb1ee088f7
 # ╠═0c9f5641-b917-422d-abd6-ae3b3d1ed0cf
 # ╟─d2a0eb54-5962-4df2-92dd-b47f3cf4b0c1
 # ╟─6abb5eef-6400-48b2-b526-f5e5a3ae44af
