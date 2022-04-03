@@ -17,7 +17,7 @@ function splice_style(obj, style) {
 }
 
 function splice_animation(obj, duration) {
-  if (duration <= 0) { return obj };
+  if (duration <= 0) { return obj }
   return obj.transition().duration(duration);
 }
 

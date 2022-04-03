@@ -69,28 +69,29 @@ md"## Javascript Snippet"
 
 # ╔═╡ 92161843-357d-47ac-8da3-27b134b22084
 Base.show(io::IO, m::MIME"text/javascript", line::Line) =
-    show(io, m, @js """<h1 style="color: red">TODO</h1>""")
+    show(io, m, @js """
+	line(
+		$(PublishToJS(line.data)),
+		ctx,
+		x_scale,
+		y_scale,
+		$(PublishToJS(to_named_tuple(line.attributes))),
+		$(line.id),
+		d3.$(line.curveType)
+	);
+	""")
 
 # ╔═╡ d68ffecb-be5c-487c-8e22-7851312e9aa7
 Base.show(io::IO, m::MIME"text/html", line::Line) =	show(io, m, @htl("""
 	<span id=$(line.id)>
 	<script id="preview-$(line.id)">
-	const { d3, line } = $(import_local_js(bundle_code));
-
+	const { d3, line_standalone } = $(import_local_js(bundle_code));
 	const svg = this == null ? DOM.svg(600, 300) : this;
 	const s = this == null ? d3.select(svg) : this.s;
 
-	var xScale, yScale, xRange, yRange;
-	xRange = [0, 600];
-	yRange = [0, 300];
-	xScale = $(HAxis((x->x.x).(line.data), [0.1, 0.9], Bottom))(s)[0];
-	yScale = $(VAxis((x->x.y).(line.data), [0.1, 0.9], Left))(s)[0];
-
-	line(
+	line_standalone(
 		$(PublishToJS(line.data)),
 		s,
-		xScale,
-		yScale,
 		$(PublishToJS(to_named_tuple(line.attributes))),
 		$(line.id),
 		d3.$(line.curveType)
@@ -113,7 +114,7 @@ Bonds.initial_value(line::Line) = (;)
 md"# Example"
 
 # ╔═╡ 93677f4d-c031-4432-8705-56575e20515b
-sz_ui = @bind sz Slider(1:1000)
+sz_ui = @bind sz Slider(1:100)
 
 # ╔═╡ 19a6176a-9a60-4e6c-86e0-38303bb78813
 @only_in_nb x = collect(1:sz+1);
@@ -126,20 +127,38 @@ sz_ui = @bind sz Slider(1:1000)
 	attributes=D3Attr(;
 		attr=(;
 			fill="none",
-			stroke="white",
+			stroke="red",
 			var"stroke-width"="1.0"
 		),
 		events=["click", "mouseover", "mousemove"],
-		duration=100
+		duration=300
 	),
-	curveType=BasisClosed
+	curveType=CatmullRom
 )
 
 # ╔═╡ abf29897-57b1-43d9-b2a0-6227c95c06d3
-line.data
+line.data;
 
 # ╔═╡ 94478d85-7d0e-44e0-bf13-a8a84a2ad83d
-@only_in_nb lineev
+@only_in_nb lineev;
+
+# ╔═╡ 031099f9-87b8-4444-a498-84b741143ce8
+c = Context(
+	(;domain=[extrema(x)...], range=[50, 450]),
+	(;domain=reverse([extrema(y)...]), range=[10, 200]),
+	[line],
+	D3Attr(),
+	"id"
+)
+
+# ╔═╡ c2736417-6021-4aa7-b561-4bcfb76ff0be
+Context(
+	(;domain=[extrema(x)...], range=[50, 550]),
+	(;domain=reverse([extrema(y)...]), range=[10, 300]),
+	[c],
+	D3Attr(attr=(;transform="rotate(-10 30 50),translate(100 100)")),
+	"id-2"
+)
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -485,6 +504,8 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╠═99fdeb31-01b8-4be5-bb42-fcc4f2da91ef
 # ╠═94478d85-7d0e-44e0-bf13-a8a84a2ad83d
 # ╠═0a27990c-f78e-4e10-875c-bbb07a2712a6
+# ╠═031099f9-87b8-4444-a498-84b741143ce8
+# ╠═c2736417-6021-4aa7-b561-4bcfb76ff0be
 # ╠═93677f4d-c031-4432-8705-56575e20515b
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

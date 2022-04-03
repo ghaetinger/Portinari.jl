@@ -71,38 +71,38 @@ md"## Javascript Snippet"
 
 # ╔═╡ 3d5b3b66-70d6-4ee7-b87d-e95f5fbe884a
 function Base.show(io::IO, m::MIME"text/javascript", shape::Shape)
-    show(io, m, @js """<h1 style="color: red">TODO</h1>""")
+    show(io, m, @js """
+	shape(
+		$(PublishToJS(shape.data)),
+		ctx,
+		x_scale,
+		y_scale,
+		$(PublishToJS(to_named_tuple(shape.attributes))),
+		$(shape.id),
+		$(shape.shapeType)
+	);
+	""")
 end
 
 # ╔═╡ 8bd162c2-c572-43c5-b34a-f9846337b6a0
 Base.show(io::IO, m::MIME"text/html", shape::Shape) = show(io, m, @htl("""
   <span id=$(shape.id)>
   <script id="preview-$(shape.id)">
-
-	const { d3, shape } = $(import_local_js(bundle_code));
-
+	const { d3, shape_standalone } = $(import_local_js(bundle_code));
 	const svg = this == null ? DOM.svg(600, 300) : this;
 	const s = this == null ? d3.select(svg) : this.s;
 
-	var xScale, yScale, xRange, yRange;
-	xRange = [0, 600];
-	yRange = [0, 300];
-	xScale = $(HAxis((x->x.x).(shape.data), [0.1, 0.9], Bottom))(s)[0];
-	yScale = $(VAxis((x->x.y).(shape.data), [0.1, 0.9], Left))(s)[0];
-
-	shape(
+	shape_standalone(
 		$(PublishToJS(shape.data)),
 		s,
-		xScale,
-		yScale,
 		$(PublishToJS(to_named_tuple(shape.attributes))),
 		$(shape.id),
 		$(shape.shapeType)
 	);
 
-  const output = svg
-  output.s = s
-  return output
+	const output = svg
+	output.s = s
+	return output
   </script>
   </span>
 """))
@@ -124,6 +124,15 @@ md"# Example"
 
 # ╔═╡ a680501f-e204-4c6f-b2c5-e630be97cdab
 @only_in_nb @bind circleevents circles = Shape(x, y, size .* 0.5, "circle-id"; attributes=D3Attr(;attr=(;fill="rgba(0, 255, 0, 0.5)"), events=["click", "mouseover"]))
+
+# ╔═╡ 3c8d94d4-92bd-4091-b54a-f903a4aa1710
+Context(
+	(;domain=[extrema(x)...], range=[50, 550]),
+	(;domain=[extrema(y)...], range=[10, 300]),
+	[circles],
+	D3Attr(attr=(;transform="rotate(-15 30 50),translate(0 100)")),
+	"id-2"
+)
 
 # ╔═╡ b48fd6bf-477e-4a02-acd6-46999415125a
 circleevents
@@ -451,7 +460,7 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 """
 
 # ╔═╡ Cell order:
-# ╠═56c9d966-382d-4c31-95ae-3af31be8e319
+# ╟─56c9d966-382d-4c31-95ae-3af31be8e319
 # ╟─e1ba78ff-a168-4a07-8b08-0299f83bc70f
 # ╠═48c1bb3e-7a28-4784-bc2a-64b19bd58b49
 # ╠═a084c49d-b1de-4033-93be-6d747cc66696
@@ -470,6 +479,7 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╠═75adb70c-1cb0-4dd3-8ee4-a054e32094c9
 # ╠═55930668-9a5d-4352-bfac-1332355f3afc
 # ╠═a680501f-e204-4c6f-b2c5-e630be97cdab
+# ╠═3c8d94d4-92bd-4091-b54a-f903a4aa1710
 # ╠═b48fd6bf-477e-4a02-acd6-46999415125a
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

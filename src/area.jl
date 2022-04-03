@@ -70,28 +70,29 @@ md"## Javascript Snippet"
 
 # ╔═╡ 1d601e35-6cac-4473-b476-9fc4aa320937
 Base.show(io::IO, m::MIME"text/javascript", area::Area) =
-    show(io, m, @js """<h1 style="color: red">TODO</h1>""")
+    show(io, m, @js """
+	area(
+		$(PublishToJS(area.data)),
+		ctx,
+		x_scale,
+		y_scale,
+		$(PublishToJS(to_named_tuple(area.attributes))),
+		$(area.id),
+		d3.$(area.curveType)
+	);
+	""")
 
 # ╔═╡ c0fda2f7-a893-496c-8798-3a84a0c92d5a
 Base.show(io::IO, m::MIME"text/html", area::Area) =	show(io, m, @htl("""
 	<span id=$(area.id)>
 	<script id="preview-$(area.id)">
-	const { d3, area } = $(import_local_js(bundle_code));
-
+	const { d3, area_standalone } = $(import_local_js(bundle_code));
 	const svg = this == null ? DOM.svg(600, 300) : this;
 	const s = this == null ? d3.select(svg) : this.s;
 
-	var xScale, yScale, xRange, yRange;
-	xRange = [0, 600];
-	yRange = [0, 300];
-	xScale = $(HAxis((x->x.x).(area.data), [0.1, 0.9], Bottom))(s)[0];
-	yScale = $(VAxis(reduce(vcat, (x->[x.y0, x.y1]).(area.data)), [0.1, 0.9], Left))(s)[0];
-
-	area(
+	area_standalone(
 		$(PublishToJS(area.data)),
 		s,
-		xScale,
-		yScale,
 		$(PublishToJS(to_named_tuple(area.attributes))),
 		$(area.id),
 		d3.$(area.curveType)
@@ -111,24 +112,22 @@ Base.show(io::IO,  m::MIME"text/javascript", curve::Curve) = Base.show(io, m, Hy
 md"# Example"
 
 # ╔═╡ 12ac3f7f-c1a4-4575-b7f8-82684175b921
-@only_in_nb x = collect(1:100)
+@only_in_nb x = collect(1:50)
 
 # ╔═╡ 05b7122e-96fe-479c-a7a8-a6070e93d775
 @only_in_nb y = [rand() for _ ∈ x]
 
 # ╔═╡ b76623bc-53a6-4a90-b11b-266d1caac640
-@only_in_nb @bind areaevents area = Area(x, y, y .* 2, "area-id"; attributes=D3Attr(events=["mouseover"]))
+@only_in_nb @bind areaevents area = Area(x, y, y .* 2, "area-id"; attributes=D3Attr(events=["mouseover"], duration=300))
 
 # ╔═╡ 9f2fd77e-1810-4f1a-891b-b2e460e8489a
-@only_in_nb D3Canvas([area], "area_example"; d3Attributes=D3Attributes(;
-	attributes=Dict(
-		"viewBox" => "0 0 300 300"
-	),
-	style=Dict(
-		"width" => "300",
-		"height" => "300"
-	)
-))
+@only_in_nb Context(
+	(;domain=[extrema(x)...], range=[50, 450]),
+	(;domain=reverse([extrema(y.*2)...]), range=[10, 200]),
+	[area],
+	D3Attr(attr=(;transform="rotate(-10 30 50),translate(0 20)")),
+	"id"
+)
 
 # ╔═╡ ef8033bd-27e3-45bf-acc7-330f40ec144a
 @only_in_nb areaevents["mouseover"]["count"]
