@@ -20,7 +20,7 @@ line_import = @use_file(joinpath(@__DIR__, "js/primitives/line.js"))
 import Deno_jll: deno
 
 # ╔═╡ c5c2c93f-e81b-464b-ae44-318d3d2e800a
-bundle_path = joinpath(@__DIR__, "js/js-bundler.js")
+bundle_path = joinpath(@__DIR__, "js/index.js")
 
 # ╔═╡ 1be81c04-3e61-46a4-ac52-b3c613d286c2
 bundle_code = begin

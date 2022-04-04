@@ -114,13 +114,13 @@ Bonds.initial_value(line::Line) = (;)
 md"# Example"
 
 # ╔═╡ 93677f4d-c031-4432-8705-56575e20515b
-sz_ui = @bind sz Slider(1:100)
+sz_ui = @bind sz Slider(0:30)
 
 # ╔═╡ 19a6176a-9a60-4e6c-86e0-38303bb78813
-@only_in_nb x = collect(1:sz+1);
+@only_in_nb x = collect(0:sz+1);
 
 # ╔═╡ 99fdeb31-01b8-4be5-bb42-fcc4f2da91ef
-@only_in_nb y = vcat([1], [rand() for _ ∈ (1:sz)]);
+@only_in_nb y = vcat([1], [rand() for _ ∈ (1:sz+1)]);
 
 # ╔═╡ 0a27990c-f78e-4e10-875c-bbb07a2712a6
 @only_in_nb @bind lineev line = Line(x, y, "line_id";
@@ -128,13 +128,16 @@ sz_ui = @bind sz Slider(1:100)
 		attr=(;
 			fill="none",
 			stroke="red",
-			var"stroke-width"="1.0"
+			var"stroke-width"="3.0"
 		),
 		events=["click", "mouseover", "mousemove"],
 		duration=300
 	),
 	curveType=CatmullRom
-)
+);
+
+# ╔═╡ d865408f-0cb2-44c9-bc75-3aeba13f9d2c
+line.attributes |> to_named_tuple |> objectid
 
 # ╔═╡ abf29897-57b1-43d9-b2a0-6227c95c06d3
 line.data;
@@ -142,22 +145,81 @@ line.data;
 # ╔═╡ 94478d85-7d0e-44e0-bf13-a8a84a2ad83d
 @only_in_nb lineev;
 
+# ╔═╡ 9634ff89-d1d9-4dab-946d-dca1646e2bc2
+@only_in_nb @bind lineev2 line2 = Line(x, y, "line_id";
+	attributes=D3Attr(;
+		attr=(;
+			fill="none",
+			stroke="red",
+			var"stroke-width"="3.0"
+		),
+		events=["click", "mouseover", "mousemove"],
+		duration=300
+	),
+	curveType=CatmullRom
+);
+
 # ╔═╡ 031099f9-87b8-4444-a498-84b741143ce8
 c = Context(
 	(;domain=[extrema(x)...], range=[50, 450]),
 	(;domain=reverse([extrema(y)...]), range=[10, 200]),
 	[line],
 	D3Attr(),
+	(0.0, 1.0),
+	(0.2, 0.8),
 	"id"
-)
+);
 
 # ╔═╡ c2736417-6021-4aa7-b561-4bcfb76ff0be
 Context(
-	(;domain=[extrema(x)...], range=[50, 550]),
-	(;domain=reverse([extrema(y)...]), range=[10, 300]),
+	(;domain=[0, 0], range=[0, 680]),
+	(;domain=[0, 0], range=[0, 400]),
 	[c],
-	D3Attr(attr=(;transform="rotate(-10 30 50),translate(100 100)")),
+	D3Attr(),
+	(0.0, 1.0),
+	(0.0, 1.0),
 	"id-2"
+);
+
+# ╔═╡ 57c30273-dffe-430e-b5e8-eb43dab1f828
+c2 = Context(
+	(;domain=[0, 0], range=[0, 680]),
+	(;domain=[0, 0], range=[0, 400]),
+	[Context(
+		(;domain=reverse([extrema(x)...]), range=[0, 680]),
+		(;domain=[extrema(y)...], range=[0, 400]),
+		[line],
+		D3Attr(),
+		(0.0, 0.5),
+		(0.0, 1.0),
+		"id-3"
+		
+	),
+	Context(
+		(;domain=[extrema(x)...], range=[0, 680]),
+		(;domain=[extrema(y)...], range=[0, 400]),
+		[line],
+		D3Attr(),
+		(0.5, 1.0),
+		(0.0, 1.0),
+		"id-4"
+		
+	)],
+	D3Attr(attr=(;transform="rotate(0 0 0),translate(0 0)")),
+	(0.0, 1.0),
+	(0.0, 1.0),
+	"id-5"
+)
+
+# ╔═╡ 83d95d02-0ac3-465e-ae5a-0f044634ccbd
+Context(
+	(;domain=[100, 0], range=[0, 680]),
+	(;domain=[100, 0], range=[0, 300]),
+	[c2],
+	D3Attr(),
+	(0.0, 0.5),
+	(0.0, 1.0),
+	"id-6"	
 )
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
@@ -497,6 +559,7 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╟─abec8fbc-e87e-484a-8386-f133d28eacab
 # ╠═92161843-357d-47ac-8da3-27b134b22084
 # ╠═d68ffecb-be5c-487c-8e22-7851312e9aa7
+# ╠═d865408f-0cb2-44c9-bc75-3aeba13f9d2c
 # ╠═abf29897-57b1-43d9-b2a0-6227c95c06d3
 # ╠═9602bfaf-b079-429f-ad60-71d24b882998
 # ╟─ba53d4cc-b096-4fb8-86f3-ee8648c10cea
@@ -504,8 +567,11 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╠═99fdeb31-01b8-4be5-bb42-fcc4f2da91ef
 # ╠═94478d85-7d0e-44e0-bf13-a8a84a2ad83d
 # ╠═0a27990c-f78e-4e10-875c-bbb07a2712a6
+# ╠═9634ff89-d1d9-4dab-946d-dca1646e2bc2
 # ╠═031099f9-87b8-4444-a498-84b741143ce8
 # ╠═c2736417-6021-4aa7-b561-4bcfb76ff0be
+# ╟─57c30273-dffe-430e-b5e8-eb43dab1f828
+# ╠═83d95d02-0ac3-465e-ae5a-0f044634ccbd
 # ╠═93677f4d-c031-4432-8705-56575e20515b
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

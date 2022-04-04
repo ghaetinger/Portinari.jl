@@ -191,6 +191,8 @@ begin
 		yAxis 	   :: Axis
 		children   :: Vector{<:D3Component}
 		attributes :: D3Attr
+		embedX     :: Tuple{Float64, Float64}
+		embedY     :: Tuple{Float64, Float64}
 		id         :: String
 	end
 end
@@ -219,12 +221,14 @@ md"## Javascript Snippet"
 # ╔═╡ baa7bf03-77f8-4fa1-9635-df02629cfe01
 function Base.show(io::IO, m::MIME"text/javascript", ctx::Context) 
 show(io, m, @js("""
-	context_standalone(
+	context(
 		ctx,
+		x_scale,
 		$(PublishToJS(ctx.xAxis.domain)),
-		$(PublishToJS(ctx.xAxis.range)),
+		$(PublishToJS(ctx.embedX)),
+		y_scale,
 		$(PublishToJS(ctx.yAxis.domain)),
-		$(PublishToJS(ctx.yAxis.range)),
+		$(PublishToJS(ctx.embedY)),
 		$(PublishToJS(to_named_tuple(ctx.attributes))),
 		$(ctx.children),
 		$(ctx.id)
