@@ -127,7 +127,7 @@ sz_ui = @bind sz Slider(0:30)
 	attributes=D3Attr(;
 		attr=(;
 			fill="none",
-			stroke="red",
+			#stroke="red",
 			var"stroke-width"="3.0"
 		),
 		events=["click", "mouseover", "mousemove"],
@@ -205,7 +205,7 @@ c2 = Context(
 		"id-4"
 		
 	)],
-	D3Attr(attr=(;transform="rotate(0 0 0),translate(0 0)")),
+	D3Attr(;style=(;stroke="gold")),
 	(0.0, 1.0),
 	(0.0, 1.0),
 	"id-5"
@@ -213,10 +213,14 @@ c2 = Context(
 
 # ╔═╡ 83d95d02-0ac3-465e-ae5a-0f044634ccbd
 Context(
-	(;domain=[100, 0], range=[0, 680]),
-	(;domain=[100, 0], range=[0, 300]),
+	(;domain=[0, 0], range=[0, 680]),
+	(;domain=[0, 0], range=[0, 300]),
 	[c2],
-	D3Attr(),
+	D3Attr(;style=(;
+		transform="rotate(-180deg)",
+		var"transform-origin"="center center",
+		stroke="green"
+	)),
 	(0.0, 0.5),
 	(0.0, 1.0),
 	"id-6"	
