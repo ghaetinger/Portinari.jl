@@ -1,14 +1,12 @@
 module Portinari
 
-export Area, Axis, Axis2D, D3Attributes, D3Component, D3Canvas, Line, @js, Shape
+export Area, Context, D3Attr, Line, Restyle, Scale, Shape
 
 include("./js_base.jl")
 
 include("./d3_abstractions.jl")
 
-include("./canvas.jl")
-
-include("./axis2D.jl")
+include("./context.jl")
 
 include("./area.jl")
 include("./line.jl")

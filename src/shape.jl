@@ -15,7 +15,7 @@ macro bind(def, element)
 end
 
 # ╔═╡ 48c1bb3e-7a28-4784-bc2a-64b19bd58b49
-using AbstractPlutoDingetjes, HypertextLiteral, Parameters, PlutoUI, PlutoDevMacros, PlutoLinks, Deno_jll
+using AbstractPlutoDingetjes, HypertextLiteral, Parameters, PlutoUI, PlutoDevMacros, Deno_jll
 
 # ╔═╡ 56c9d966-382d-4c31-95ae-3af31be8e319
 @only_in_nb PlutoUI.TableOfContents()
@@ -113,29 +113,31 @@ Base.show(io::IO,  m::MIME"text/javascript", shapeType::ShapeType) = Base.show(i
 # ╔═╡ e3c572e1-f4df-4b55-8ada-2221cffca8a7
 md"# Example"
 
-# ╔═╡ 231107ce-cdc2-413f-91d0-5df25124d9b6
-@only_in_nb x = [rand() for _ ∈ collect(1:100)]
+# ╔═╡ 3e12e1ae-f0d6-4842-8db9-1a360d0d77f4
+@only_in_nb sz_ui = @bind sz Slider(0:30)
 
-# ╔═╡ 75adb70c-1cb0-4dd3-8ee4-a054e32094c9
-@only_in_nb y = [rand() for _ ∈ x]
+# ╔═╡ ea333c2b-b1b1-4da0-a994-68dfa15daa3f
+@only_in_nb x = collect(0:sz);
+
+# ╔═╡ 423b340f-b594-435b-81f1-75d00304364b
+@only_in_nb y = vcat([rand() for _ ∈ (0:sz)]);
 
 # ╔═╡ 55930668-9a5d-4352-bfac-1332355f3afc
-@only_in_nb size = [rand() * rand() * 5000 for i ∈ 1:length(x)]
+@only_in_nb size = [rand() * rand() * 4000 for i ∈ 1:length(x)];
 
 # ╔═╡ a680501f-e204-4c6f-b2c5-e630be97cdab
-@only_in_nb @bind circleevents circles = Shape(x, y, size .* 0.5, "circle-id"; attributes=D3Attr(;attr=(;fill="rgba(0, 255, 0, 0.5)"), events=["click", "mouseover"]))
-
-# ╔═╡ 3c8d94d4-92bd-4091-b54a-f903a4aa1710
-Context(
-	(;domain=[extrema(x)...], range=[50, 550]),
-	(;domain=[extrema(y)...], range=[10, 300]),
-	[circles],
-	D3Attr(attr=(;transform="rotate(-15 30 50),translate(0 100)")),
-	"id-2"
+@only_in_nb @bind circleevents circles = Shape(x, y, size, "circle-id";
+	attributes=D3Attr(;
+		attr=(;fill="rgba(0, 255, 0, 0.5)"),
+		events=["click", "mouseover", "mousemove"],
+		duration=400
+	)
 )
 
-# ╔═╡ b48fd6bf-477e-4a02-acd6-46999415125a
-circleevents
+# ╔═╡ 0190c960-1ee9-44c1-b5d2-2f2bbeb26291
+@only_in_nb ismissing(circleevents) ? md"" : @htl("""
+	$([@htl("""<h4>$ev : $(descr["count"])</h4>""") for (ev, descr) ∈ circleevents])
+""")
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -145,7 +147,6 @@ Deno_jll = "04572ae6-984a-583e-9378-9577a1c2574d"
 HypertextLiteral = "ac1192a8-f4b3-4bfe-ba22-af5b92cd3ab2"
 Parameters = "d96e819e-fc66-5662-9728-84c9c7592b0a"
 PlutoDevMacros = "a0499f29-c39b-4c5c-807c-88074221b949"
-PlutoLinks = "0ff47ea0-7a50-410d-8455-4348d5de0420"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 
 [compat]
@@ -154,7 +155,6 @@ Deno_jll = "~1.20.4"
 HypertextLiteral = "~0.9.3"
 Parameters = "~0.12.3"
 PlutoDevMacros = "~0.4.5"
-PlutoLinks = "~0.1.5"
 PlutoUI = "~0.7.37"
 """
 
@@ -180,12 +180,6 @@ uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
 [[deps.Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
 
-[[deps.CodeTracking]]
-deps = ["InteractiveUtils", "UUIDs"]
-git-tree-sha1 = "9fb640864691a0936f94f89150711c36072b0e8f"
-uuid = "da1fd8a2-8d9e-5ec2-8556-3022fb5608a2"
-version = "1.0.8"
-
 [[deps.ColorTypes]]
 deps = ["FixedPointNumbers", "Random"]
 git-tree-sha1 = "024fe24d83e4a5bf5fc80501a314ce0d1aa35597"
@@ -206,16 +200,9 @@ git-tree-sha1 = "970da1e64a94f13b51c81691c376a1d5a83a0b3c"
 uuid = "04572ae6-984a-583e-9378-9577a1c2574d"
 version = "1.20.4+0"
 
-[[deps.Distributed]]
-deps = ["Random", "Serialization", "Sockets"]
-uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
-
 [[deps.Downloads]]
 deps = ["ArgTools", "LibCURL", "NetworkOptions"]
 uuid = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
-
-[[deps.FileWatching]]
-uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
 
 [[deps.FixedPointNumbers]]
 deps = ["Statistics"]
@@ -256,12 +243,6 @@ git-tree-sha1 = "3c837543ddb02250ef42f4738347454f95079d4e"
 uuid = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
 version = "0.21.3"
 
-[[deps.JuliaInterpreter]]
-deps = ["CodeTracking", "InteractiveUtils", "Random", "UUIDs"]
-git-tree-sha1 = "9c43a2eb47147a8776ca2ba489f15a9f6f2906f8"
-uuid = "aa1ae85d-cabe-5617-a682-6adf51b2e16a"
-version = "0.9.11"
-
 [[deps.LibCURL]]
 deps = ["LibCURL_jll", "MozillaCACerts_jll"]
 uuid = "b27032c2-a3e7-50c8-80cd-2d36dbcbfd21"
@@ -287,12 +268,6 @@ uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 
 [[deps.Logging]]
 uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
-
-[[deps.LoweredCodeUtils]]
-deps = ["JuliaInterpreter"]
-git-tree-sha1 = "6b0440822974cab904c8b14d79743565140567f6"
-uuid = "6f1432cf-f94c-5a45-995e-cdbf5db27b0b"
-version = "2.2.1"
 
 [[deps.MacroTools]]
 deps = ["Markdown", "Random"]
@@ -348,18 +323,6 @@ git-tree-sha1 = "994167def8f46d3be21783a76705228430e29632"
 uuid = "a0499f29-c39b-4c5c-807c-88074221b949"
 version = "0.4.5"
 
-[[deps.PlutoHooks]]
-deps = ["InteractiveUtils", "Markdown", "UUIDs"]
-git-tree-sha1 = "072cdf20c9b0507fdd977d7d246d90030609674b"
-uuid = "0ff47ea0-7a50-410d-8455-4348d5de0774"
-version = "0.0.5"
-
-[[deps.PlutoLinks]]
-deps = ["FileWatching", "InteractiveUtils", "Markdown", "PlutoHooks", "Revise", "UUIDs"]
-git-tree-sha1 = "0e8bcc235ec8367a8e9648d48325ff00e4b0a545"
-uuid = "0ff47ea0-7a50-410d-8455-4348d5de0420"
-version = "0.1.5"
-
 [[deps.PlutoUI]]
 deps = ["AbstractPlutoDingetjes", "Base64", "ColorTypes", "Dates", "Hyperscript", "HypertextLiteral", "IOCapture", "InteractiveUtils", "JSON", "Logging", "Markdown", "Random", "Reexport", "UUIDs"]
 git-tree-sha1 = "bf0a1121af131d9974241ba53f601211e9303a9e"
@@ -394,12 +357,6 @@ deps = ["UUIDs"]
 git-tree-sha1 = "838a3a4188e2ded87a4f9f184b4b0d78a1e91cb7"
 uuid = "ae029012-a4dd-5104-9daa-d747884805df"
 version = "1.3.0"
-
-[[deps.Revise]]
-deps = ["CodeTracking", "Distributed", "FileWatching", "JuliaInterpreter", "LibGit2", "LoweredCodeUtils", "OrderedCollections", "Pkg", "REPL", "Requires", "UUIDs", "Unicode"]
-git-tree-sha1 = "4d4239e93531ac3e7ca7e339f15978d0b5149d03"
-uuid = "295af30f-e4ad-537b-8983-00126c2a3abe"
-version = "3.3.3"
 
 [[deps.SHA]]
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
@@ -475,11 +432,11 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╠═3d5b3b66-70d6-4ee7-b87d-e95f5fbe884a
 # ╠═8bd162c2-c572-43c5-b34a-f9846337b6a0
 # ╟─e3c572e1-f4df-4b55-8ada-2221cffca8a7
-# ╠═231107ce-cdc2-413f-91d0-5df25124d9b6
-# ╠═75adb70c-1cb0-4dd3-8ee4-a054e32094c9
+# ╠═3e12e1ae-f0d6-4842-8db9-1a360d0d77f4
+# ╠═ea333c2b-b1b1-4da0-a994-68dfa15daa3f
+# ╠═423b340f-b594-435b-81f1-75d00304364b
 # ╠═55930668-9a5d-4352-bfac-1332355f3afc
+# ╟─0190c960-1ee9-44c1-b5d2-2f2bbeb26291
 # ╠═a680501f-e204-4c6f-b2c5-e630be97cdab
-# ╠═3c8d94d4-92bd-4091-b54a-f903a4aa1710
-# ╠═b48fd6bf-477e-4a02-acd6-46999415125a
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
