@@ -42,12 +42,14 @@ end;
 
 # ╔═╡ 4557ccac-50fa-448b-b1a8-10c2196d7083
 begin
-	Scale(ctx, embedX, embedY, id) = Context(ctx.xAxis, ctx.yAxis, ctx.children, ctx.attributes, embedX, embedY, id)
-	Scale(ctx, embedX, embedY, attributes, id) = Context(ctx.xAxis, ctx.yAxis, ctx.children, attributes, embedX, embedY, id)
+	Scale(ctx, embedX, embedY, id; attributes=D3Attr()) = Context(ctx.xAxis, ctx.yAxis, [ctx], attributes, embedX, embedY, id)
 end
 
 # ╔═╡ 2d9e6f15-1fb5-4fce-b655-93591e8491bb
 Restyle(ctx, attributes, id) = Context(ctx.xAxis, ctx.yAxis, ctx.children, attributes, ctx.embedX, ctx.embedY, id)
+
+# ╔═╡ 33629ee8-2e0b-44ee-99ba-0b942f3edb0c
+RestyleOver(ctx, attributes, id) = Context(ctx.xAxis, ctx.yAxis, [ctx], attributes, ctx.embedX, ctx.embedY, id)
 
 # ╔═╡ 2bc3ddd7-1a16-4dcc-a029-555697987f17
 begin
@@ -410,6 +412,7 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╠═82090d2a-bc09-4f5e-8377-3452fdaeca46
 # ╠═4557ccac-50fa-448b-b1a8-10c2196d7083
 # ╠═2d9e6f15-1fb5-4fce-b655-93591e8491bb
+# ╠═33629ee8-2e0b-44ee-99ba-0b942f3edb0c
 # ╠═2bc3ddd7-1a16-4dcc-a029-555697987f17
 # ╟─28c2fbc1-fa21-4ace-86c8-d085f19af466
 # ╠═baa7bf03-77f8-4fa1-9635-df02629cfe01

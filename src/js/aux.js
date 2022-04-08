@@ -6,6 +6,13 @@ export function splice_attributes(obj, attributes, span) {
   return obj;
 }
 
+export function static_splice_attributes(obj, attributes, span) {
+  obj = splice_event_handles(obj, attributes['events'], span);
+  obj = splice_attribute(obj, attributes['attr']);
+  obj = splice_style(obj, attributes['style']);
+  return obj;
+}
+
 function splice_attribute(obj, attribute) {
   const keys = Object.keys(attribute);
   return keys.reduce((_obj, attribute_key) => _obj.attr(attribute_key, attribute[attribute_key]), obj);

@@ -127,8 +127,8 @@ md"# Example"
 			stroke="green",
 			var"stroke-width"="3.0"
 		),
-		events=["click", "mouseover", "mousemove"],
-		duration=200
+		#events=["click", "mouseover", "mousemove"],
+		duration=100
 	),
 	curveType=BasisClosed
 )
@@ -137,6 +137,44 @@ md"# Example"
 @only_in_nb ismissing(lineev) ? md"" : @htl("""
 	$([@htl("""<h4>$ev : $(descr["count"])</h4>""") for (ev, descr) ∈ lineev])
 """)
+
+# ╔═╡ 702c3e6a-938f-4619-87d6-9c0313402158
+ctx = Context(
+	(;domain=[extrema(x)...], range=[0, 690]),
+	(;domain=[extrema(y)...], range=[0, 300]),
+	[line],
+	"ctx"
+)
+
+# ╔═╡ 1cd9f10e-e995-451a-91d2-b97520ee96e3
+begin
+	rows = 4
+	cols = 4
+	ctxs = []
+	rows_val = 1 / rows
+	cols_val = 1 / cols
+
+	row = Context(
+		(domain=[0, 0], range=[0, 690]),
+		(domain=[0, 0], range=[0, 300]),
+		[Scale(Restyle(ctx, 
+			D3Attr(;style=(;transform= i % 2 == 0 ? "scale(1, 1)" : "scale(-1, 1)")),
+			"restyle-$i"
+		), (i * cols_val, (i+1) * cols_val), (0.0, 1.0), "scale-$i") for i ∈ (0:cols-1)] |> vec,
+		"row"
+	);
+
+	Context(
+		(domain=[0, 0], range=[0, 690]),
+		(domain=[0, 0], range=[0, 300]),
+		[Scale(Restyle(row, 
+			D3Attr(;style=(;transform= i % 2 == 0 ? "scale(1, 1)" : "scale(1, -1)")),
+			"restyle-row-$i"
+		), (0.0, 1.0), (i * rows_val, (i+1) * rows_val), "scale-row-$i")
+			for i ∈ (0:rows-1)] |> vec,
+		"all"
+	)
+end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -431,10 +469,12 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╠═92161843-357d-47ac-8da3-27b134b22084
 # ╠═d68ffecb-be5c-487c-8e22-7851312e9aa7
 # ╟─ba53d4cc-b096-4fb8-86f3-ee8648c10cea
-# ╟─93677f4d-c031-4432-8705-56575e20515b
 # ╠═19a6176a-9a60-4e6c-86e0-38303bb78813
 # ╠═99fdeb31-01b8-4be5-bb42-fcc4f2da91ef
 # ╟─94478d85-7d0e-44e0-bf13-a8a84a2ad83d
 # ╠═0a27990c-f78e-4e10-875c-bbb07a2712a6
+# ╠═702c3e6a-938f-4619-87d6-9c0313402158
+# ╠═1cd9f10e-e995-451a-91d2-b97520ee96e3
+# ╟─93677f4d-c031-4432-8705-56575e20515b
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
