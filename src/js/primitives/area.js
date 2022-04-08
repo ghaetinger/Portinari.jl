@@ -6,7 +6,6 @@ export function area(data, parent_component, x_scale, y_scale, attributes, span_
   const span = document.getElementById(span_id);
   if (span != null) {
     span.value = span.value || {};
-    span.dispatchEvent(new CustomEvent("input"));
   }
 
   const path = d3.area()

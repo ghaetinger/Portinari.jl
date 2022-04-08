@@ -32,7 +32,7 @@ export function context(parent_component, x_scale, x_domain, x_range, y_scale, y
   return ctx;
 }
 
-export function context_standalone(parent_component, x_domain, x_range, y_domain, y_range, attributes, children, id) {
+export function context_standalone(parent_component, x_domain, x_range, y_domain, y_range, attributes, children, id, show_axis=false) {
   const class_name = `ctx-${id}`;
 
   attributes["attr"]["transform-origin"] = "center";
@@ -42,8 +42,8 @@ export function context_standalone(parent_component, x_domain, x_range, y_domain
                         .data([1])
                         .join("g");
 
-  const x_scale = x_axis(ctx, x_domain, x_range, id, true),
-        y_scale = y_axis(ctx, y_domain, y_range, id, true);
+  const x_scale = x_axis(ctx, x_domain, x_range, id, show_axis),
+        y_scale = y_axis(ctx, y_domain, y_range, id, show_axis);
 
   ctx = static_splice_attributes(ctx, attributes, null);
   ctx = ctx.attr("class", class_name);

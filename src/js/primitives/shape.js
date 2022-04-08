@@ -6,7 +6,6 @@ export function shape(data, parent_component, x_scale, y_scale, attributes, span
   const span = document.getElementById(span_id);
   if (span != null) {
     span.value = span.value || {};
-    span.dispatchEvent(new CustomEvent("input"));
   }
 
   const symbol = d3.symbol()

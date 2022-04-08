@@ -124,13 +124,13 @@ md"# Example"
 	attributes=D3Attr(;
 		attr=(;
 			fill="none",
-			stroke="green",
+			#stroke="green",
 			var"stroke-width"="3.0"
 		),
-		#events=["click", "mouseover", "mousemove"],
-		duration=100
+		events=["click", "mouseover", "mousemove"],
+		duration=200
 	),
-	curveType=BasisClosed
+	curveType=Natural
 )
 
 # ╔═╡ 94478d85-7d0e-44e0-bf13-a8a84a2ad83d
@@ -139,17 +139,17 @@ md"# Example"
 """)
 
 # ╔═╡ 702c3e6a-938f-4619-87d6-9c0313402158
-ctx = Context(
+@only_in_nb ctx = Context(
 	(;domain=[extrema(x)...], range=[0, 690]),
 	(;domain=[extrema(y)...], range=[0, 300]),
 	[line],
 	"ctx"
-)
+);
 
 # ╔═╡ 1cd9f10e-e995-451a-91d2-b97520ee96e3
-begin
-	rows = 4
-	cols = 4
+@only_in_nb begin
+	rows = 16
+	cols = 16
 	ctxs = []
 	rows_val = 1 / rows
 	cols_val = 1 / cols
@@ -158,7 +158,11 @@ begin
 		(domain=[0, 0], range=[0, 690]),
 		(domain=[0, 0], range=[0, 300]),
 		[Scale(Restyle(ctx, 
-			D3Attr(;style=(;transform= i % 2 == 0 ? "scale(1, 1)" : "scale(-1, 1)")),
+			D3Attr(;
+				style=(;
+					transform= i % 2 == 0 ? "scale(1, 1)" : "scale(-1, 1)",
+					stroke="rgb($(rand() * 255), $(rand() * 255), $(rand() * 255))"
+				)),
 			"restyle-$i"
 		), (i * cols_val, (i+1) * cols_val), (0.0, 1.0), "scale-$i") for i ∈ (0:cols-1)] |> vec,
 		"row"
@@ -166,13 +170,14 @@ begin
 
 	Context(
 		(domain=[0, 0], range=[0, 690]),
-		(domain=[0, 0], range=[0, 300]),
+		(domain=[0, 0], range=[0, 600]),
 		[Scale(Restyle(row, 
 			D3Attr(;style=(;transform= i % 2 == 0 ? "scale(1, 1)" : "scale(1, -1)")),
 			"restyle-row-$i"
 		), (0.0, 1.0), (i * rows_val, (i+1) * rows_val), "scale-row-$i")
 			for i ∈ (0:rows-1)] |> vec,
-		"all"
+		"all";
+		drawAxis=false
 	)
 end
 

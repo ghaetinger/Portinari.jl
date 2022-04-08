@@ -33,23 +33,24 @@ begin
 		embedX     :: Tuple{Float64, Float64}
 		embedY     :: Tuple{Float64, Float64}
 		id         :: String
+		drawAxis   :: Bool
 	end
 
 	# TODO: fix typing
-	Context(xAxis, yAxis, children::Vector{<:D3Component}, id; attributes=D3Attr(), embedX=(0.0, 1.0), embedY=(0.0, 1.0)) =
-		Context(xAxis, yAxis, children, attributes, embedX, embedY, id)
+	Context(xAxis, yAxis, children::Vector{<:D3Component}, id; attributes=D3Attr(), embedX=(0.0, 1.0), embedY=(0.0, 1.0), drawAxis=true) =
+		Context(xAxis, yAxis, children, attributes, embedX, embedY, id, drawAxis)
 end;
 
 # ╔═╡ 4557ccac-50fa-448b-b1a8-10c2196d7083
 begin
-	Scale(ctx, embedX, embedY, id; attributes=D3Attr()) = Context(ctx.xAxis, ctx.yAxis, [ctx], attributes, embedX, embedY, id)
+	Scale(ctx, embedX, embedY, id; attributes=D3Attr()) = Context(ctx.xAxis, ctx.yAxis, [ctx], attributes, embedX, embedY, id, ctx.drawAxis)
 end
 
 # ╔═╡ 2d9e6f15-1fb5-4fce-b655-93591e8491bb
-Restyle(ctx, attributes, id) = Context(ctx.xAxis, ctx.yAxis, ctx.children, attributes, ctx.embedX, ctx.embedY, id)
+Restyle(ctx, attributes, id) = Context(ctx.xAxis, ctx.yAxis, ctx.children, attributes, ctx.embedX, ctx.embedY, id, ctx.drawAxis)
 
 # ╔═╡ 33629ee8-2e0b-44ee-99ba-0b942f3edb0c
-RestyleOver(ctx, attributes, id) = Context(ctx.xAxis, ctx.yAxis, [ctx], attributes, ctx.embedX, ctx.embedY, id)
+RestyleOver(ctx, attributes, id) = Context(ctx.xAxis, ctx.yAxis, [ctx], attributes, ctx.embedX, ctx.embedY, id, ctx.drawAxis)
 
 # ╔═╡ 2bc3ddd7-1a16-4dcc-a029-555697987f17
 begin
@@ -85,7 +86,8 @@ show(io, m, @js("""
 		$(PublishToJS(ctx.embedY)),
 		$(PublishToJS(to_named_tuple(ctx.attributes))),
 		$(ctx.children),
-		$(ctx.id)
+		$(ctx.id),
+		$(ctx.drawAxis)
 	)
 """))
 end
@@ -115,7 +117,8 @@ Base.show(io::IO, m::MIME"text/html", ctx::Context) =
 		$(PublishToJS(ctx.yAxis.range)),
 		$(PublishToJS(to_named_tuple(ctx.attributes))),
 		$(ctx.children),
-		$(ctx.id)
+		$(ctx.id),
+		$(ctx.drawAxis)
 	)
 
 	const output = svg
