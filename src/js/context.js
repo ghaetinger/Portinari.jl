@@ -1,5 +1,5 @@
 import { d3 } from './d3-import.js';
-import { static_splice_attributes } from './aux.js';
+import { static_splice_attributes } from './attribute_splicing.js';
 import { x_axis, y_axis } from "./primitives/axis.js";
 
 export function context(parent_component, x_scale, x_domain, x_range, y_scale, y_domain, y_range, attributes, children, id) {

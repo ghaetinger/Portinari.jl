@@ -1,5 +1,5 @@
 import { d3 } from '../d3-import.js';
-import { splice_attributes } from '../aux.js';
+import { splice_attributes } from '../attribute_splicing.js';
 import { x_axis, y_axis } from "./axis.js";
 
 export function area(data, parent_component, x_scale, y_scale, attributes, span_id, curve) {
