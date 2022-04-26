@@ -17,9 +17,30 @@ https://user-images.githubusercontent.com/23220288/161279567-6ab6a7b8-3ee0-404b-
 
 ```mermaid
 graph TD;
-    d3_abstractions.jl-->canvas.jl;
-    canvas.jl-->context.jl;
+    js_base.jl-->d3_abstractions.jl
+    d3_abstractions.jl-->context.jl;
+
+    context.js-->context.jl
+    d3-import.js-->context.js
+    attribute_splicing.js-->context.js
+
     context.jl-->area.jl;
+    area.js-->area.jl
+    d3-import.js-->area.js
+    attribute_splicing.js-->area.js
+
     context.jl-->line.jl;
+    line.js-->line.jl
+    d3-import.js-->line.js
+    attribute_splicing.js-->line.js
+
     context.jl-->shape.jl;
+    shape.js-->shape.jl
+    d3-import.js-->shape.js
+    attribute_splicing.js-->shape.js
+
+    d3-import.js-->index.js
+    attribute_splicing.js-->index.js
+
+    index.js-->js_base.jl 
 ```
