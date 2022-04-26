@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.18.1
+# v0.18.4
 
 using Markdown
 using InteractiveUtils
@@ -14,154 +14,71 @@ macro bind(def, element)
     end
 end
 
-# ╔═╡ 8c91a16a-9a3c-11ec-2d66-e5b70965ccdd
+# ╔═╡ 82e0613e-b50e-11ec-0a7e-050ecf0c92ca
 begin
 	using Pkg
 	using Revise
 	Pkg.activate(Base.current_project(@__DIR__))
-	using PlutoD3, PlutoUI, HypertextLiteral
+	using Portinari, PlutoUI, HypertextLiteral
 end
 
-# ╔═╡ 033d82ef-fd56-46e9-8199-c0222614c341
-x = collect(1:20)
+# ╔═╡ dba679be-b646-48b2-ad36-e257fcc100f4
+@bind sz Slider(1:100; show_value=true)
 
-# ╔═╡ 2c7f409d-f52b-427f-a06f-7c3d0935aa54
-y = [rand() for _ ∈ x]
+# ╔═╡ 6c52e239-e5bd-47c2-af70-19be6545acb3
+x = collect(1:sz)
 
-# ╔═╡ 0652b983-8fb1-4c1c-99ac-fddddd26ec76
-@bind w Slider(100:1000)
+# ╔═╡ 4d754375-9fa1-43f6-880b-25c1b57e4ddf
+y = rand(sz)
 
-# ╔═╡ 10159f1a-d5a8-4cf4-986b-2666e711df80
-@bind h Slider(100:1000)
+# ╔═╡ 78c862a6-a979-430b-8d46-1e1a94a394a9
+line = Line(x, y, "base-line";
+	attributes=D3Attr(style=(;fill="none", stroke="green", var"stroke-width"="3"))
+)
 
-# ╔═╡ 9de66973-ea7d-4df9-9b32-cd87c475d28c
-canvas = D3Canvas([
-	Line(x, y;
-	cwidth = w,
-	cheight = h,
-	offset = round(Int64, min(w, h) / 10),
-	d3Attributes=D3Attributes(;
-		attributes=Dict(
-			"fill" => "none",
-			"stroke" => "gold",
-			"stroke-width" => "7.0"
-		),
-		animationTime=1000
-	),
-	curveType=PlutoD3.CatmullRom,
-	),
-	Area(x, y, y .* 1.2; 
-	cwidth = w,
-	cheight = h,
-	offset =round(Int64, min(w, h) / 10),
-	d3Attributes=D3Attributes(;
-		attributes=Dict(
-			"fill" => "rgba(255, 0, 0, 0.8)",
-			"stroke" => "none",
-			"stroke-width" => "1.0"
-		),
-		style=Dict(
-			"filter" => "blur(0px)"
-		)
-	),
-		curveType=PlutoD3.Basis
-	),
-		Area(x, y .* 1.2, y; 
-	cwidth = w,
-	cheight = h,
-	offset =round(Int64, min(w, h) / 10),
-	d3Attributes=D3Attributes(;
-		attributes=Dict(
-			"fill" => "rgba(100, 150, 255, 0.8)",
-			"stroke" => "none",
-			"stroke-width" => "1.0"
-		),
-		style=Dict(
-			"filter" => "blur(2px)"
-		)
-	),
-		curveType=PlutoD3.Basis
-	),
-	LinearScale(y, h, round(Int64, min(w, h) / 10); show=true, dir=PlutoD3.Right),
-	LinearScale(x, w, round(Int64, min(w, h) / 10); show=true, dir=PlutoD3.Bottom)
-], "abc"; d3Attributes=D3Attributes(;
-		attributes=Dict(
-			"viewBox" => "0 0 $w $h"
-		),
-		style=Dict(
-			"width" => "$(w)px",
-			"height" => "$(h)px",
-		)
-))
+# ╔═╡ 83870a8f-0f9b-4b0f-8d28-a8e1820e3b87
+val = rand(sz) .* 500
 
-# ╔═╡ 927549cf-865b-41cc-ac14-76f95275e3b3
-canvas2 = D3Canvas([
-	Area(x, y, y .* 1.2; 
-	cwidth = w,
-	cheight = h,
-	offset =round(Int64, min(w, h) / 10),
-	d3Attributes=D3Attributes(;
-		attributes=Dict(
-			"fill" => "rgba(255, 0, 0, 0.8)",
-			"stroke" => "none",
-			"stroke-width" => "1.0"
-		),
-		style=Dict(
-			"filter" => "blur(0px)"
-		)
-	),
-		curveType=PlutoD3.Basis
-	),
-		Area(x, y .* 1.2, y; 
-	cwidth = w,
-	cheight = h,
-	offset =round(Int64, min(w, h) / 10),
-	d3Attributes=D3Attributes(;
-		attributes=Dict(
-			"fill" => "rgba(100, 150, 255, 0.8)",
-			"stroke" => "none",
-			"stroke-width" => "1.0"
-		),
-		style=Dict(
-			"filter" => "blur(20px)"
-		)
-	),
-		curveType=PlutoD3.Basis
-		),
-	LinearScale(x, w, round(Int64, min(w, h) / 10); show=true, dir=PlutoD3.Bottom)
-], "abcdef"; d3Attributes=D3Attributes(;
-		attributes=Dict(
-			"viewBox" => "0 0 $w $h"
-		),
-		style=Dict(
-			"width" => "$(w)px",
-			"height" => "$(h)px",
-		)
-))
+# ╔═╡ 61ae25d3-e6c1-471b-b029-303f29c88970
+shapes = Shape(x, y, val, "base-shapes";
+	attributes=D3Attr(style=(;fill="rgba(255, 0, 0, 0.3)"))
+)
 
-# ╔═╡ 1a245013-ff53-41f2-9612-441f1304d8ba
-@htl("""
-<div>
-$canvas
-<br>
-$canvas2
-</div>
-""")
+# ╔═╡ 1149fcb4-909c-4250-bb69-39dff8a44c47
+together = Context(
+	(;domain=([extrema(x)...]), range=[0, 630]),
+	(;domain=([extrema(y)...]), range=[0, 300]),
+	[line, shapes],
+	"together"
+)
 
-# ╔═╡ cdfd5d8b-ecc8-4505-af6f-cd12ed5b69dc
+# ╔═╡ fa9c38b1-dbed-4fbd-a0a0-6ca80d38c855
+together_rev = Context(
+	(;domain=([extrema(x)...]), range=[0, 630]),
+	(;domain=(reverse([extrema(y)...])), range=[0, 300]),
+	[line, shapes],
+	"together"
+)
 
-
-# ╔═╡ e2a61f90-9a47-4f59-8c6c-f3cff087fa4e
-const Layout = PlutoUI.ExperimentalLayout
+# ╔═╡ 6de965b1-62d8-491e-b632-386d8f7a0fca
+merge = Context(
+	(;domain=[0, 0], range=[50, 600]),
+	(;domain=[0, 0], range=[50, 300]),
+	[
+		Scale(together, (0.0, 1.0), (0.0, 0.5), "together-scale"),
+		Scale(together_rev, (0.0, 1.0), (0.5, 0.8), "together-rev-scale"),
+	],
+	"merge"
+)
 
 # ╔═╡ Cell order:
-# ╠═8c91a16a-9a3c-11ec-2d66-e5b70965ccdd
-# ╠═033d82ef-fd56-46e9-8199-c0222614c341
-# ╠═2c7f409d-f52b-427f-a06f-7c3d0935aa54
-# ╠═0652b983-8fb1-4c1c-99ac-fddddd26ec76
-# ╠═10159f1a-d5a8-4cf4-986b-2666e711df80
-# ╠═1a245013-ff53-41f2-9612-441f1304d8ba
-# ╠═9de66973-ea7d-4df9-9b32-cd87c475d28c
-# ╠═927549cf-865b-41cc-ac14-76f95275e3b3
-# ╠═cdfd5d8b-ecc8-4505-af6f-cd12ed5b69dc
-# ╠═e2a61f90-9a47-4f59-8c6c-f3cff087fa4e
+# ╠═82e0613e-b50e-11ec-0a7e-050ecf0c92ca
+# ╟─6c52e239-e5bd-47c2-af70-19be6545acb3
+# ╟─4d754375-9fa1-43f6-880b-25c1b57e4ddf
+# ╠═83870a8f-0f9b-4b0f-8d28-a8e1820e3b87
+# ╠═78c862a6-a979-430b-8d46-1e1a94a394a9
+# ╠═61ae25d3-e6c1-471b-b029-303f29c88970
+# ╠═1149fcb4-909c-4250-bb69-39dff8a44c47
+# ╠═fa9c38b1-dbed-4fbd-a0a0-6ca80d38c855
+# ╠═6de965b1-62d8-491e-b632-386d8f7a0fca
+# ╟─dba679be-b646-48b2-ad36-e257fcc100f4

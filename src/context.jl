@@ -1,80 +1,138 @@
 ### A Pluto.jl notebook ###
-# v0.18.1
+# v0.18.4
 
 using Markdown
 using InteractiveUtils
 
-# ╔═╡ 36a5f97a-7d42-4c54-953f-70c520244d53
-using AbstractPlutoDingetjes, HypertextLiteral, Parameters, PlutoUI, PlutoDevMacros
+# ╔═╡ 0cde3f18-6b7e-4c96-a09e-b5419d481053
+using AbstractPlutoDingetjes, HypertextLiteral, Parameters, PlutoUI, PlutoDevMacros, Deno_jll
 
-# ╔═╡ 7b5b0fb8-4a1a-436d-8e39-89a609f22f4d
+# ╔═╡ 5ee4e18c-8a03-41c8-ab2c-2c3ff430f5f8
 @only_in_nb PlutoUI.TableOfContents()
 
-# ╔═╡ 9f9b6c9e-02ec-4095-879d-6ac4abc44cb8
+# ╔═╡ 652695a3-5c8b-4cea-b79c-fe1192df8527
 md"# Ingredients"
 
-# ╔═╡ 755a4bee-c5c9-4d46-8c73-49e7f26bfb95
+# ╔═╡ 01e347d4-a998-476a-a549-bbd591330439
 @plutoinclude "./d3_abstractions.jl" "all"
 
-# ╔═╡ fd577d77-9aa4-4ccd-b9ad-ac91bd4937f3
-md"# Canvas"
+# ╔═╡ 9df4facb-6862-4898-aa04-ae944c94969f
+md"# Context"
 
-# ╔═╡ a34c9b8f-8c57-45e6-a548-715442884ac7
+# ╔═╡ 6fdebb9a-3053-4699-bd3b-6fa4c43c3283
 md"## Structure"
 
-# ╔═╡ 591ebc46-06c0-4ffc-85fc-30a35975bed1
+# ╔═╡ 82090d2a-bc09-4f5e-8377-3452fdaeca46
 begin
-	struct D3Canvas
-		components   :: Vector{Any} # TODO: Set this to <: D3Component 
-		d3Attributes :: D3Attributes
-		id           :: String
-		initWidth    :: Int64
-		initHeight   :: Int64
+	Axis = @NamedTuple{domain::Vector{<:Number}, range::Vector{<:Number}}
+	struct Context <: D3Component
+		xAxis 	   :: Axis
+		yAxis 	   :: Axis
+		children   :: Vector{<:D3Component}
+		attributes :: D3Attr
+		embedX     :: Tuple{Float64, Float64}
+		embedY     :: Tuple{Float64, Float64}
+		id         :: String
+		drawAxis   :: Bool
 	end
 
-	# Make id as PlutoRunner.currently_running_cell_id
-	function D3Canvas(components::Vector{}, id::String; d3Attributes=D3Attributes(), initWidth=100, initHeight=100)
-		D3Canvas(components, d3Attributes, id, initWidth, initHeight)
-	end
+	# TODO: fix typing
+	Context(xAxis, yAxis, children::Vector{<:D3Component}, id; attributes=D3Attr(), embedX=(0.0, 1.0), embedY=(0.0, 1.0), drawAxis=true) =
+		Context(xAxis, yAxis, children, attributes, embedX, embedY, id, drawAxis)
 end;
 
-# ╔═╡ ce31255b-fd64-4b01-86b5-f39f689c9766
+# ╔═╡ 4557ccac-50fa-448b-b1a8-10c2196d7083
+begin
+	Scale(ctx, embedX, embedY, id; attributes=D3Attr()) = Context(ctx.xAxis, ctx.yAxis, [ctx], attributes, embedX, embedY, id, ctx.drawAxis)
+end
+
+# ╔═╡ 2d9e6f15-1fb5-4fce-b655-93591e8491bb
+Restyle(ctx, attributes, id) = Context(ctx.xAxis, ctx.yAxis, ctx.children, attributes, ctx.embedX, ctx.embedY, id, ctx.drawAxis)
+
+# ╔═╡ 33629ee8-2e0b-44ee-99ba-0b942f3edb0c
+RestyleOver(ctx, attributes, id) = Context(ctx.xAxis, ctx.yAxis, [ctx], attributes, ctx.embedX, ctx.embedY, id, ctx.drawAxis)
+
+# ╔═╡ 2bc3ddd7-1a16-4dcc-a029-555697987f17
+begin
+function Base.extrema(children::Vector{<:D3Component})
+	extremas = (Base.extrema).(children)
+	minxs = (v -> v.minx).(extremas)
+	minys = (v -> v.miny).(extremas)
+	maxxs = (v -> v.maxx).(extremas)
+	maxys = (v -> v.maxy).(extremas)
+
+	return (
+		minx=minimum(minxs),
+		miny=minimum(minys),
+		maxx=maximum(maxxs),
+		maxy=maximum(maxys)
+	)
+end
+end
+
+# ╔═╡ 28c2fbc1-fa21-4ace-86c8-d085f19af466
 md"## Javascript Snippet"
 
-# ╔═╡ 61c3a0c2-5a4e-4114-a57f-099cfe05f7fd
-Base.show(io::IO, m::MIME"text/html", canvas::D3Canvas) =
-	Base.show(io, m, @htl("""
-<span>
-<script src="https://cdn.jsdelivr.net/npm/d3@6.2.0/dist/d3.min.js"></script>
-<script id="canvas-$(canvas.id)">
-    const span = currentScript.parentElement;
-	console.log(span)
-	const svg = this == null ? DOM.svg($(canvas.initWidth),$(canvas.initHeight)) : this;
+# ╔═╡ baa7bf03-77f8-4fa1-9635-df02629cfe01
+function Base.show(io::IO, m::MIME"text/javascript", ctx::Context) 
+show(io, m, @js("""
+	context(
+		ctx,
+		x_scale,
+		$(PublishToJS(ctx.xAxis.domain)),
+		$(PublishToJS(ctx.embedX)),
+		y_scale,
+		$(PublishToJS(ctx.yAxis.domain)),
+		$(PublishToJS(ctx.embedY)),
+		$(PublishToJS(to_named_tuple(ctx.attributes))),
+		$(ctx.children),
+		$(ctx.id),
+		$(ctx.drawAxis)
+	)
+"""))
+end
+
+# ╔═╡ 2b0b5165-776a-4d1f-9151-19465d75124c
+Base.show(io::IO, m::MIME"text/html", ctx::Context) =
+	show(io, m, @htl("""
+	<span id=$(ctx.id)>
+	<script id="context-$(ctx.id)">
+
+	const { 
+		d3,
+  		context,
+  		context_standalone,
+  		area, line, shape,
+  		area_standalone, line_standalone, shape_standalone
+	} = $(import_local_js(bundle_code));
+	
+	const svg = this == null ? DOM.svg($(maximum(ctx.xAxis.range)), $(maximum(ctx.yAxis.range))) : this;
 	const s = this == null ? d3.select(svg) : this.s;
 
-	var comp_foos = $(canvas.components);
+	context_standalone(
+		s,	
+		$(PublishToJS(ctx.xAxis.domain)),
+		$(PublishToJS(ctx.xAxis.range)),
+		$(PublishToJS(ctx.yAxis.domain)),
+		$(PublishToJS(ctx.yAxis.range)),
+		$(PublishToJS(to_named_tuple(ctx.attributes))),
+		$(ctx.children),
+		$(ctx.id),
+		$(ctx.drawAxis)
+	)
 
-	for (var i = 0; i < comp_foos.length; i++) {
-		comp_foos[i](i, span);
-	}
-
-	const id = "canvas"; 
-    s.transition()
-     .duration($(canvas.d3Attributes.animationTime))
-     $(canvas.d3Attributes)
-
-	span.value = {};
 	const output = svg
 	output.s = s
 	return output
-</script>
-</span>
+	</script>
+	</span>
 """))
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 AbstractPlutoDingetjes = "6e696c72-6542-2067-7265-42206c756150"
+Deno_jll = "04572ae6-984a-583e-9378-9577a1c2574d"
 HypertextLiteral = "ac1192a8-f4b3-4bfe-ba22-af5b92cd3ab2"
 Parameters = "d96e819e-fc66-5662-9728-84c9c7592b0a"
 PlutoDevMacros = "a0499f29-c39b-4c5c-807c-88074221b949"
@@ -82,6 +140,7 @@ PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 
 [compat]
 AbstractPlutoDingetjes = "~1.1.4"
+Deno_jll = "~1.20.4"
 HypertextLiteral = "~0.9.3"
 Parameters = "~0.12.3"
 PlutoDevMacros = "~0.4.5"
@@ -92,7 +151,7 @@ PlutoUI = "~0.7.37"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.7.1"
+julia_version = "1.7.2"
 manifest_format = "2.0"
 
 [[deps.AbstractPlutoDingetjes]]
@@ -124,6 +183,12 @@ uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
 deps = ["Printf"]
 uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
 
+[[deps.Deno_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "970da1e64a94f13b51c81691c376a1d5a83a0b3c"
+uuid = "04572ae6-984a-583e-9378-9577a1c2574d"
+version = "1.20.4+0"
+
 [[deps.Downloads]]
 deps = ["ArgTools", "LibCURL", "NetworkOptions"]
 uuid = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
@@ -154,6 +219,12 @@ version = "0.2.2"
 [[deps.InteractiveUtils]]
 deps = ["Markdown"]
 uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
+
+[[deps.JLLWrappers]]
+deps = ["Preferences"]
+git-tree-sha1 = "abc9885a7ca2052a736a600f7fa66209f96506e1"
+uuid = "692b3bcd-3c85-4b1f-b108-f13ce0eb3210"
+version = "1.4.1"
 
 [[deps.JSON]]
 deps = ["Dates", "Mmap", "Parsers", "Unicode"]
@@ -247,6 +318,12 @@ git-tree-sha1 = "bf0a1121af131d9974241ba53f601211e9303a9e"
 uuid = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 version = "0.7.37"
 
+[[deps.Preferences]]
+deps = ["TOML"]
+git-tree-sha1 = "d3538e7f8a790dc8903519090857ef8e1283eecd"
+uuid = "21216c6a-2e73-6563-6e65-726566657250"
+version = "1.2.5"
+
 [[deps.Printf]]
 deps = ["Unicode"]
 uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
@@ -329,14 +406,19 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 """
 
 # ╔═╡ Cell order:
-# ╠═7b5b0fb8-4a1a-436d-8e39-89a609f22f4d
-# ╟─9f9b6c9e-02ec-4095-879d-6ac4abc44cb8
-# ╠═36a5f97a-7d42-4c54-953f-70c520244d53
-# ╠═755a4bee-c5c9-4d46-8c73-49e7f26bfb95
-# ╟─fd577d77-9aa4-4ccd-b9ad-ac91bd4937f3
-# ╟─a34c9b8f-8c57-45e6-a548-715442884ac7
-# ╠═591ebc46-06c0-4ffc-85fc-30a35975bed1
-# ╟─ce31255b-fd64-4b01-86b5-f39f689c9766
-# ╠═61c3a0c2-5a4e-4114-a57f-099cfe05f7fd
+# ╟─5ee4e18c-8a03-41c8-ab2c-2c3ff430f5f8
+# ╟─652695a3-5c8b-4cea-b79c-fe1192df8527
+# ╠═0cde3f18-6b7e-4c96-a09e-b5419d481053
+# ╠═01e347d4-a998-476a-a549-bbd591330439
+# ╟─9df4facb-6862-4898-aa04-ae944c94969f
+# ╟─6fdebb9a-3053-4699-bd3b-6fa4c43c3283
+# ╠═82090d2a-bc09-4f5e-8377-3452fdaeca46
+# ╠═4557ccac-50fa-448b-b1a8-10c2196d7083
+# ╠═2d9e6f15-1fb5-4fce-b655-93591e8491bb
+# ╠═33629ee8-2e0b-44ee-99ba-0b942f3edb0c
+# ╠═2bc3ddd7-1a16-4dcc-a029-555697987f17
+# ╟─28c2fbc1-fa21-4ace-86c8-d085f19af466
+# ╠═baa7bf03-77f8-4fa1-9635-df02629cfe01
+# ╠═2b0b5165-776a-4d1f-9151-19465d75124c
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

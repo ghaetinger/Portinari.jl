@@ -1,14 +1,12 @@
 module Portinari
 
-using Reexport
+export Area, Context, D3Attr, Line, Restyle, Scale, Shape
 
-export Area, D3Attributes, D3Component, D3Canvas, Line, LinearScale, @js, Shape
+include("./js_base.jl")
 
 include("./d3_abstractions.jl")
 
-include("./canvas.jl")
-
-include("./linear_scale.jl")
+include("./context.jl")
 
 include("./area.jl")
 include("./line.jl")

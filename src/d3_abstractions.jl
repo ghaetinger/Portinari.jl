@@ -1,14 +1,20 @@
 ### A Pluto.jl notebook ###
-# v0.18.1
+# v0.18.4
 
 using Markdown
 using InteractiveUtils
 
 # ╔═╡ 774bb4f2-963e-11ec-30ff-e3394f52858b
-using HypertextLiteral, PlutoUI, Parameters, PlutoDevMacros
+using HypertextLiteral, PlutoUI, Parameters, PlutoDevMacros, Deno_jll
 
 # ╔═╡ 320477a5-77ad-40b3-bccd-37a06c06c22e
 @only_in_nb TableOfContents()
+
+# ╔═╡ b1d3d2ca-aa67-47de-a2a8-6119f3ca4e46
+md"# Ingredients"
+
+# ╔═╡ bad43269-199b-4176-8548-8a963268cb46
+@plutoinclude "./js_base.jl" "all"
 
 # ╔═╡ 09e4ee53-b8b7-4de0-9439-d1bc7bc22578
 md"# Javascript Snippet macro"
@@ -28,7 +34,7 @@ begin
 	function Base.show(io::IO, m::MIME"text/javascript", r::RenderWithoutScriptTags)
 		full_result = repr(MIME"text/html"(), r.x; context=io)
 		write(io, 
-			"((id=0, span=undefined) => {" * full_result[1+length("<script>"):end-length("</script>")] * "})"
+			"((ctx, x_scale, y_scale) => {" * full_result[1+length("<script>"):end-length("</script>")] * "})"
 		)
 	end
 end
@@ -55,67 +61,70 @@ end
 # ╔═╡ e3156da9-8603-41f9-ad41-03eaf79c4540
 md"# D3"
 
-# ╔═╡ 793e2198-560d-461c-a9c4-40e042eab790
-md"## D3 Component Attributes"
-
-# ╔═╡ 44721f68-c05e-4d6d-a721-6809a4ab72f8
-attr_style_to_javascript(head::String, ls::Dict{String, String}) = 
-	HypertextLiteral.JavaScript(
-		join([".$head(\"$k\", \"$v\")" for (k, v) ∈ ls], "\n")
-	)
-
-# ╔═╡ 53493b6d-9677-4683-a19a-9a4879b76f00
-events_to_javascript(ls::Vector{String}) =
-	HypertextLiteral.JavaScript(
-		join([""".on("$event", (function(e, d) {
-			const key = id + "-" + "$event";
-			const count = span.value[key] == undefined ? 0 : span.value[key].count;
-			span.value[key] = {'count': count + 1, 'data': d};
-			span.dispatchEvent(new CustomEvent("input"))
-		}))""" for event ∈ ls], "\n")
-	)
-
-# ╔═╡ 838314e4-a125-4578-9c68-400610133912
-animation_to_javascript(animationTime::Int) =
-	HypertextLiteral.JavaScript("""
-		.transition()
-		.duration($animationTime)
-	""")
-
-# ╔═╡ c80d5063-aac3-4ee7-994c-eb6394b225eb
-@with_kw struct D3Attributes
-  attributes    :: Dict{String, String} = Dict()
-  style         :: Dict{String, String} = Dict()
-  animationTime :: Int = 200
-  events        :: Vector{String} = []
-end
-
-# ╔═╡ d544a9cc-4412-4b7d-a223-5bb181b595bb
-Base.show(io::IO, m::MIME"text/javascript", d3attrs::D3Attributes) =
-	Base.show(io, m, 
-		HypertextLiteral.JavaScript(
-			events_to_javascript(d3attrs.events).content *
-			animation_to_javascript(d3attrs.animationTime).content *
-			attr_style_to_javascript("attr", d3attrs.attributes).content *
-			attr_style_to_javascript("style", d3attrs.style).content
-		)
-	)
-
 # ╔═╡ b5110c15-0b46-4450-b8d2-9a83f7aeef54
 md"## D3 Component Type"
 
 # ╔═╡ c06a51f5-224a-4ffa-87a7-d5f39a1a4bb5
 abstract type D3Component end
 
+# ╔═╡ 37f3557c-0d82-464d-9f36-847eceebaae6
+Base.extrema(component::D3Component) =
+	error("Extrema not implemented for type $(typeof(component))")
+
+# ╔═╡ d8c59da2-5a98-4321-89f2-4766d9ad14c6
+md"## D3 Attributes"
+
+# ╔═╡ c80d5063-aac3-4ee7-994c-eb6394b225eb
+@with_kw struct D3Attr
+  attr     :: NamedTuple = (;)
+  style    :: NamedTuple = (;)
+  duration :: Int = 200
+  events   :: Vector{<:AbstractString} = String[]
+end
+
+# ╔═╡ 813d7b17-a806-4d9e-95ed-e095a43a8291
+to_named_tuple(attr::D3Attr) = (attr=attr.attr, style=attr.style, duration=attr.duration, events=attr.events)
+
+# ╔═╡ 1eaa1bb9-7893-4181-973c-feda25677ef3
+md"## Curve Types"
+
+# ╔═╡ 25710a40-fe6a-4f1d-8851-00ddc810d8f4
+@enum Curve Cardinal Natural CatmullRom MonotoneX MonotoneY Basis BasisClosed Linear LinearClosed
+
+# ╔═╡ 5e2b8127-3385-406a-8de1-4acb74ff3126
+md"## Shape Types"
+
+# ╔═╡ e19d9ac1-b314-4901-a448-f58230011b05
+@enum ShapeType Square Circle Triangle
+
+# ╔═╡ 9763e4b9-515d-4576-9f76-1b337365d6a6
+Base.show(io::IO,  m::MIME"text/javascript", shapeType::ShapeType) = Base.show(io, m, HypertextLiteral.JavaScript("d3.symbol" * (string(shapeType))))
+
+# ╔═╡ 743f182a-46da-4732-b1e4-5a237912848f
+Base.show(io::IO,  m::MIME"text/javascript", curve::Curve) = Base.show(io, m, HypertextLiteral.JavaScript("curve" * string(curve)))
+
+# ╔═╡ 8803b1d9-a29c-4b4c-b5bc-93a78561a70f
+begin
+	struct PublishToJS
+	x
+	end
+	function Base.show(io::IO, m::MIME"text/javascript", ptj::PublishToJS)
+		Base.show(io, m, Main.PlutoRunner.publish_to_js(ptj.x))
+	end
+	better_publish_to_js(x) = PublishToJS(x)
+end
+
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
+Deno_jll = "04572ae6-984a-583e-9378-9577a1c2574d"
 HypertextLiteral = "ac1192a8-f4b3-4bfe-ba22-af5b92cd3ab2"
 Parameters = "d96e819e-fc66-5662-9728-84c9c7592b0a"
 PlutoDevMacros = "a0499f29-c39b-4c5c-807c-88074221b949"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 
 [compat]
+Deno_jll = "~1.20.4"
 HypertextLiteral = "~0.9.3"
 Parameters = "~0.12.3"
 PlutoDevMacros = "~0.4.5"
@@ -126,7 +135,7 @@ PlutoUI = "~0.7.35"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.7.1"
+julia_version = "1.7.2"
 manifest_format = "2.0"
 
 [[deps.AbstractPlutoDingetjes]]
@@ -158,6 +167,12 @@ uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
 deps = ["Printf"]
 uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
 
+[[deps.Deno_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "970da1e64a94f13b51c81691c376a1d5a83a0b3c"
+uuid = "04572ae6-984a-583e-9378-9577a1c2574d"
+version = "1.20.4+0"
+
 [[deps.Downloads]]
 deps = ["ArgTools", "LibCURL", "NetworkOptions"]
 uuid = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
@@ -188,6 +203,12 @@ version = "0.2.2"
 [[deps.InteractiveUtils]]
 deps = ["Markdown"]
 uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
+
+[[deps.JLLWrappers]]
+deps = ["Preferences"]
+git-tree-sha1 = "abc9885a7ca2052a736a600f7fa66209f96506e1"
+uuid = "692b3bcd-3c85-4b1f-b108-f13ce0eb3210"
+version = "1.4.1"
 
 [[deps.JSON]]
 deps = ["Dates", "Mmap", "Parsers", "Unicode"]
@@ -281,6 +302,12 @@ git-tree-sha1 = "85bf3e4bd279e405f91489ce518dedb1e32119cb"
 uuid = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 version = "0.7.35"
 
+[[deps.Preferences]]
+deps = ["TOML"]
+git-tree-sha1 = "d3538e7f8a790dc8903519090857ef8e1283eecd"
+uuid = "21216c6a-2e73-6563-6e65-726566657250"
+version = "1.2.5"
+
 [[deps.Printf]]
 deps = ["Unicode"]
 uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
@@ -365,19 +392,26 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╔═╡ Cell order:
 # ╠═774bb4f2-963e-11ec-30ff-e3394f52858b
 # ╟─320477a5-77ad-40b3-bccd-37a06c06c22e
+# ╟─b1d3d2ca-aa67-47de-a2a8-6119f3ca4e46
+# ╠═bad43269-199b-4176-8548-8a963268cb46
 # ╟─09e4ee53-b8b7-4de0-9439-d1bc7bc22578
 # ╠═4d193bff-9ed2-42ba-9cef-4d8c9abc8332
 # ╠═c9458743-0471-430e-b7a5-e26a2ccb5811
 # ╠═279012f1-b67a-4fac-a169-34dbe47e4638
 # ╠═227f7480-a39d-4692-9874-ff9328e4080a
+# ╠═8803b1d9-a29c-4b4c-b5bc-93a78561a70f
 # ╟─e3156da9-8603-41f9-ad41-03eaf79c4540
-# ╟─793e2198-560d-461c-a9c4-40e042eab790
-# ╠═44721f68-c05e-4d6d-a721-6809a4ab72f8
-# ╠═53493b6d-9677-4683-a19a-9a4879b76f00
-# ╠═838314e4-a125-4578-9c68-400610133912
-# ╠═c80d5063-aac3-4ee7-994c-eb6394b225eb
-# ╠═d544a9cc-4412-4b7d-a223-5bb181b595bb
 # ╟─b5110c15-0b46-4450-b8d2-9a83f7aeef54
 # ╠═c06a51f5-224a-4ffa-87a7-d5f39a1a4bb5
+# ╠═37f3557c-0d82-464d-9f36-847eceebaae6
+# ╟─d8c59da2-5a98-4321-89f2-4766d9ad14c6
+# ╠═c80d5063-aac3-4ee7-994c-eb6394b225eb
+# ╠═813d7b17-a806-4d9e-95ed-e095a43a8291
+# ╟─1eaa1bb9-7893-4181-973c-feda25677ef3
+# ╠═25710a40-fe6a-4f1d-8851-00ddc810d8f4
+# ╠═743f182a-46da-4732-b1e4-5a237912848f
+# ╟─5e2b8127-3385-406a-8de1-4acb74ff3126
+# ╠═e19d9ac1-b314-4901-a448-f58230011b05
+# ╠═9763e4b9-515d-4576-9f76-1b337365d6a6
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

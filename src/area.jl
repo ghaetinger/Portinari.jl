@@ -1,11 +1,21 @@
 ### A Pluto.jl notebook ###
-# v0.18.1
+# v0.18.4
 
 using Markdown
 using InteractiveUtils
 
-# ╔═╡ 2f76b33d-fa26-4b3d-9d78-78cc65e99b7e
-using AbstractPlutoDingetjes, HypertextLiteral, Parameters, PlutoUI, PlutoDevMacros
+# This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
+macro bind(def, element)
+    quote
+        local iv = try Base.loaded_modules[Base.PkgId(Base.UUID("6e696c72-6542-2067-7265-42206c756150"), "AbstractPlutoDingetjes")].Bonds.initial_value catch; b -> missing; end
+        local el = $(esc(element))
+        global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : iv(el)
+        el
+    end
+end
+
+# ╔═╡ b9c61535-53a8-4442-a489-0ba662d88050
+using AbstractPlutoDingetjes, HypertextLiteral, Parameters, PlutoUI, PlutoDevMacros, Deno_jll
 
 # ╔═╡ f6a506e8-23ae-4a5b-842d-f938cfceee5f
 @only_in_nb PlutoUI.TableOfContents()
@@ -14,16 +24,10 @@ using AbstractPlutoDingetjes, HypertextLiteral, Parameters, PlutoUI, PlutoDevMac
 md"# Ingredients"
 
 # ╔═╡ 40896e22-e6a0-4dfb-b202-9764de200d79
-@plutoinclude "./linear_scale.jl" "all"
+@plutoinclude "./context.jl" "all"
 
 # ╔═╡ 93ede436-8e57-4030-93ae-74567844f624
 md"# Area"
-
-# ╔═╡ a6ef4beb-dd0d-4517-8382-30bbdfb685cc
-md"## Curve Types"
-
-# ╔═╡ 3bf51d0b-5d80-4321-9ecb-6680c70fffec
-@enum Curve Cardinal Natural CatmullRom MonotoneX MonotoneY Basis BasisClosed
 
 # ╔═╡ 73005a4c-7d7a-41b6-ad8c-52780d51f24c
 md"## Structure"
@@ -32,88 +36,100 @@ md"## Structure"
 begin
   struct Area <: D3Component
     data         :: Vector{NamedTuple{(:x, :y0, :y1), Tuple{<:Real, <:Real, <:Real}}}
-	scaleX       :: LinearScale
-	scaleY       :: LinearScale
-	d3Attributes :: D3Attributes
+	attributes   :: D3Attr
 	curveType    :: Curve
+	id           :: String
   end
 
-  Area(x, y0, y1;
-        cwidth=100,
-        cheight=100,
-        offset=0,
-        d3Attributes=D3Attributes(),
-	    curveType=Natural
+  Area(x::Vector{}, y0::Vector{}, y1::Vector{}, id::String;
+	attributes=D3Attr(),
+	curveType=Natural
   ) = Area(
 	  [(x=x[i], y0=y0[i], y1=y1[i]) for i ∈ 1:length(x)],
-	  LinearScale(x, cwidth, offset),
-	  LinearScale(y1, cheight, offset),
-	  d3Attributes,
-	  curveType
+	  attributes,
+	  curveType,
+	  id
   )
 end;
+
+# ╔═╡ b7c8ca6e-bec8-43a7-a3c9-8ad09d017e5e
+function bounds(area::Area)
+	xs = (v -> v.x).(data)
+	ys = reduce(vcat, (v -> [v.y0, v.y1]).(data)) 
+	return (minx=minimum(xs), miny=minimum(ys), maxx=maximum(xs), maxy=maximum(ys))
+end
 
 # ╔═╡ f1e2da3f-71b2-48a1-a51b-cd1ae6fac89c
 md"## Javascript Snippet"
 
 # ╔═╡ 1d601e35-6cac-4473-b476-9fc4aa320937
 Base.show(io::IO, m::MIME"text/javascript", area::Area) =
-	show(io, m, @js """
-    	const xScale = $(area.scaleX)();
-    	const yScale = $(area.scaleY)();
-    	const path = d3.area()
-					   .x(d => xScale(d.x))
-      				   .y0(d => yScale(d.y0))
-      				   .y1(d => yScale(d.y1))
-      				   .curve(d3.$(area.curveType))
-
-		const data = $(area.data);
-    	s.selectAll(".line-" + id)
-	     .data([data])
-     	 .join("path")
-     	 $(area.d3Attributes)
-     	 .attr("d", path)
-     	 .attr("class", "line-" + id)
+    show(io, m, @js """
+	area(
+		$(PublishToJS(area.data)),
+		ctx,
+		x_scale,
+		y_scale,
+		$(PublishToJS(to_named_tuple(area.attributes))),
+		$(area.id),
+		d3.$(area.curveType)
+	);
 	""")
 
-# ╔═╡ c9bed508-ea77-4ae4-8876-ac2a5ec62114
-Base.show(io::IO,  m::MIME"text/javascript", curve::Curve) = Base.show(io, m, HypertextLiteral.JavaScript("curve" * string(curve)))
+# ╔═╡ c0fda2f7-a893-496c-8798-3a84a0c92d5a
+Base.show(io::IO, m::MIME"text/html", area::Area) =	show(io, m, @htl("""
+	<span id=$(area.id)>
+	<script id="preview-$(area.id)">
+	const { d3, area_standalone } = $(import_local_js(bundle_code));
+	const svg = this == null ? DOM.svg(600, 300) : this;
+	const s = this == null ? d3.select(svg) : this.s;
+
+	area_standalone(
+		$(PublishToJS(area.data)),
+		s,
+		$(PublishToJS(to_named_tuple(area.attributes))),
+		$(area.id),
+		d3.$(area.curveType)
+	);
+
+	const output = svg
+	output.s = s
+	return output
+	</script>
+	</span>
+"""))
 
 # ╔═╡ 354f2549-8d20-4ac3-a6f0-5acf1ad4fde4
 md"# Example"
 
-# ╔═╡ 12ac3f7f-c1a4-4575-b7f8-82684175b921
-@only_in_nb x = collect(1:5)
+# ╔═╡ 3c05600e-4a30-45b7-987b-d3145747658f
+@only_in_nb sz_ui = @bind sz Slider(0:30)
 
-# ╔═╡ 05b7122e-96fe-479c-a7a8-a6070e93d775
-@only_in_nb y = [rand() for _ ∈ x]
+# ╔═╡ 9a9bf009-4a7e-4ac9-8c43-16e33dc75fab
+@only_in_nb x = collect(0:sz+1);
 
-# ╔═╡ 9f2fd77e-1810-4f1a-891b-b2e460e8489a
-@only_in_nb D3Canvas([Area(x, y, y .* 2;
-    cwidth=300,
-	cheight=300,
-	offset=50,
-	d3Attributes=D3Attributes(;
-		attributes=Dict(
-			"fill" => "orange",
-			"stroke" => "gold",
-			"stroke-width" => "5.0"
-		)
+# ╔═╡ 456f3862-377c-42ba-aa78-6f8120e36fa8
+@only_in_nb y = vcat([1], [rand() for _ ∈ (1:sz+1)]);
+
+# ╔═╡ b76623bc-53a6-4a90-b11b-266d1caac640
+@only_in_nb @bind areaevents area = Area(x, y, y .* 2, "area-id";
+	attributes=D3Attr(
+		style=(;fill="green"),
+		events=["click", "mouseover", "mousemove"],
+		duration=300
 	)
-)], "area_example"; d3Attributes=D3Attributes(;
-	attributes=Dict(
-		"viewBox" => "0 0 300 300"
-	),
-	style=Dict(
-		"width" => "300",
-		"height" => "300"
-	)
-))
+)
+
+# ╔═╡ 9ad82d90-ba80-4ec8-8add-c21a5bd18bbe
+@only_in_nb ismissing(areaevents) ? md"" : @htl("""
+	$([@htl("""<h4>$ev : $(descr["count"])</h4>""") for (ev, descr) ∈ areaevents])
+""")
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 AbstractPlutoDingetjes = "6e696c72-6542-2067-7265-42206c756150"
+Deno_jll = "04572ae6-984a-583e-9378-9577a1c2574d"
 HypertextLiteral = "ac1192a8-f4b3-4bfe-ba22-af5b92cd3ab2"
 Parameters = "d96e819e-fc66-5662-9728-84c9c7592b0a"
 PlutoDevMacros = "a0499f29-c39b-4c5c-807c-88074221b949"
@@ -121,17 +137,18 @@ PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 
 [compat]
 AbstractPlutoDingetjes = "~1.1.4"
+Deno_jll = "~1.20.4"
 HypertextLiteral = "~0.9.3"
 Parameters = "~0.12.3"
 PlutoDevMacros = "~0.4.5"
-PlutoUI = "~0.7.37"
+PlutoUI = "~0.7.38"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.7.1"
+julia_version = "1.7.2"
 manifest_format = "2.0"
 
 [[deps.AbstractPlutoDingetjes]]
@@ -163,6 +180,12 @@ uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
 deps = ["Printf"]
 uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
 
+[[deps.Deno_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "970da1e64a94f13b51c81691c376a1d5a83a0b3c"
+uuid = "04572ae6-984a-583e-9378-9577a1c2574d"
+version = "1.20.4+0"
+
 [[deps.Downloads]]
 deps = ["ArgTools", "LibCURL", "NetworkOptions"]
 uuid = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
@@ -193,6 +216,12 @@ version = "0.2.2"
 [[deps.InteractiveUtils]]
 deps = ["Markdown"]
 uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
+
+[[deps.JLLWrappers]]
+deps = ["Preferences"]
+git-tree-sha1 = "abc9885a7ca2052a736a600f7fa66209f96506e1"
+uuid = "692b3bcd-3c85-4b1f-b108-f13ce0eb3210"
+version = "1.4.1"
 
 [[deps.JSON]]
 deps = ["Dates", "Mmap", "Parsers", "Unicode"]
@@ -266,9 +295,9 @@ version = "0.12.3"
 
 [[deps.Parsers]]
 deps = ["Dates"]
-git-tree-sha1 = "85b5da0fa43588c75bb1ff986493443f821c70b7"
+git-tree-sha1 = "621f4f3b4977325b9128d5fae7a8b4829a0c2222"
 uuid = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
-version = "2.2.3"
+version = "2.2.4"
 
 [[deps.Pkg]]
 deps = ["Artifacts", "Dates", "Downloads", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "Serialization", "TOML", "Tar", "UUIDs", "p7zip_jll"]
@@ -282,9 +311,15 @@ version = "0.4.5"
 
 [[deps.PlutoUI]]
 deps = ["AbstractPlutoDingetjes", "Base64", "ColorTypes", "Dates", "Hyperscript", "HypertextLiteral", "IOCapture", "InteractiveUtils", "JSON", "Logging", "Markdown", "Random", "Reexport", "UUIDs"]
-git-tree-sha1 = "bf0a1121af131d9974241ba53f601211e9303a9e"
+git-tree-sha1 = "670e559e5c8e191ded66fa9ea89c97f10376bb4c"
 uuid = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
-version = "0.7.37"
+version = "0.7.38"
+
+[[deps.Preferences]]
+deps = ["TOML"]
+git-tree-sha1 = "d3538e7f8a790dc8903519090857ef8e1283eecd"
+uuid = "21216c6a-2e73-6563-6e65-726566657250"
+version = "1.2.5"
 
 [[deps.Printf]]
 deps = ["Unicode"]
@@ -368,21 +403,22 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 """
 
 # ╔═╡ Cell order:
-# ╠═f6a506e8-23ae-4a5b-842d-f938cfceee5f
+# ╟─f6a506e8-23ae-4a5b-842d-f938cfceee5f
 # ╟─796ed4ef-66b8-4c03-a0d2-429cc3ac76eb
-# ╠═2f76b33d-fa26-4b3d-9d78-78cc65e99b7e
+# ╠═b9c61535-53a8-4442-a489-0ba662d88050
 # ╠═40896e22-e6a0-4dfb-b202-9764de200d79
 # ╟─93ede436-8e57-4030-93ae-74567844f624
-# ╠═a6ef4beb-dd0d-4517-8382-30bbdfb685cc
-# ╠═3bf51d0b-5d80-4321-9ecb-6680c70fffec
-# ╠═c9bed508-ea77-4ae4-8876-ac2a5ec62114
 # ╟─73005a4c-7d7a-41b6-ad8c-52780d51f24c
 # ╠═6a107d2b-96db-465a-8582-0c6ab5699043
-# ╠═f1e2da3f-71b2-48a1-a51b-cd1ae6fac89c
+# ╠═b7c8ca6e-bec8-43a7-a3c9-8ad09d017e5e
+# ╟─f1e2da3f-71b2-48a1-a51b-cd1ae6fac89c
 # ╠═1d601e35-6cac-4473-b476-9fc4aa320937
+# ╠═c0fda2f7-a893-496c-8798-3a84a0c92d5a
 # ╟─354f2549-8d20-4ac3-a6f0-5acf1ad4fde4
-# ╠═12ac3f7f-c1a4-4575-b7f8-82684175b921
-# ╠═05b7122e-96fe-479c-a7a8-a6070e93d775
-# ╠═9f2fd77e-1810-4f1a-891b-b2e460e8489a
+# ╟─3c05600e-4a30-45b7-987b-d3145747658f
+# ╠═9a9bf009-4a7e-4ac9-8c43-16e33dc75fab
+# ╠═456f3862-377c-42ba-aa78-6f8120e36fa8
+# ╟─9ad82d90-ba80-4ec8-8add-c21a5bd18bbe
+# ╠═b76623bc-53a6-4a90-b11b-266d1caac640
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

@@ -1,11 +1,21 @@
 ### A Pluto.jl notebook ###
-# v0.18.1
+# v0.18.4
 
 using Markdown
 using InteractiveUtils
 
+# This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
+macro bind(def, element)
+    quote
+        local iv = try Base.loaded_modules[Base.PkgId(Base.UUID("6e696c72-6542-2067-7265-42206c756150"), "AbstractPlutoDingetjes")].Bonds.initial_value catch; b -> missing; end
+        local el = $(esc(element))
+        global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : iv(el)
+        el
+    end
+end
+
 # ╔═╡ 48c1bb3e-7a28-4784-bc2a-64b19bd58b49
-using AbstractPlutoDingetjes, HypertextLiteral, Parameters, PlutoUI, PlutoDevMacros
+using AbstractPlutoDingetjes, HypertextLiteral, Parameters, PlutoUI, PlutoDevMacros, Deno_jll
 
 # ╔═╡ 56c9d966-382d-4c31-95ae-3af31be8e319
 @only_in_nb PlutoUI.TableOfContents()
@@ -14,118 +24,117 @@ using AbstractPlutoDingetjes, HypertextLiteral, Parameters, PlutoUI, PlutoDevMac
 md"# Ingredients"
 
 # ╔═╡ a084c49d-b1de-4033-93be-6d747cc66696
-@plutoinclude "./linear_scale.jl" "all"
+@plutoinclude "./context.jl" "all"
 
 # ╔═╡ f956d529-3001-4488-9898-db01aa6add73
 md"# Shape"
-
-# ╔═╡ 5ae0cf49-aa13-4681-b9d1-0383cd39d8f1
-md"## Types"
-
-# ╔═╡ e00085a9-8fc3-4205-8037-b9ddb7090862
-@enum ShapeType Square Circle Triangle
 
 # ╔═╡ 5e895427-8660-44b2-8639-f0f3d701265d
 md"## Structure"
 
 # ╔═╡ 3dbad6fc-e54e-49ee-a5f2-31ace0581812
 begin
-  struct Shape <: D3Component
-    data         :: Vector{NamedTuple{(:x, :y, :size), Tuple{<:Real, <:Real, <:Real}}}
-	scaleX       :: LinearScale
-	scaleY       :: LinearScale
-	d3Attributes :: D3Attributes
-	shapeType    :: ShapeType
-  end
-	
+    struct Shape <: D3Component
+        data       :: Vector{NamedTuple{(:x, :y, :size), Tuple{<:Real, <:Real, <:Real}}}
+        attributes :: D3Attr
+        shapeType  :: ShapeType
+        id         :: String
+    end
 
-  Shape(x, y, size;
-        cwidth=100,
-        cheight=100,
-        offset=0,
-        d3Attributes=D3Attributes(),
-	    shapeType=Circle
-  ) = Shape(
-	  [(x=x[i], y=y[i], size=size[i]) for i ∈ 1:length(x)],
-	  LinearScale(x, cwidth, offset),
-	  LinearScale(y, cheight, offset),
-	  d3Attributes,
-	  shapeType
-  )
+
+    Shape(x::Vector{}, y::Vector{}, size::Vector{}, id;
+          attributes=D3Attr(),
+          shapeType=Circle
+          ) = Shape(
+              [(x=x[i], y=y[i], size=size[i]) for i ∈ 1:length(x)],
+              attributes,
+              shapeType,
+              id
+          )
 end;
+
+# ╔═╡ a171006f-2e4a-437b-a474-8f31cb261e23
+function bounds(shape::Shape)
+    xs = (v -> v.x).(data)
+    ys = (v -> v.y).(data)
+    return (minx=minimum(xs), miny=minimum(ys), maxx=maximum(xs), maxy=maximum(ys))
+end
 
 # ╔═╡ 3caffb89-d565-43b0-85ae-3a431d378f67
 md"## Javascript Snippet"
 
 # ╔═╡ 3d5b3b66-70d6-4ee7-b87d-e95f5fbe884a
 function Base.show(io::IO, m::MIME"text/javascript", shape::Shape)
-	show(io, m, @js """
-    	const xScale = $(shape.scaleX)();
-    	const yScale = $(shape.scaleY)();
-		const symbol = d3.symbol()
-	                     .type($(shape.shapeType))
-	                     .size(d => d.size);
-	
-		const data = $(shape.data);
-    	s.selectAll(".shape-" + id)
-	     .data(data)
-     	 .join("path")
-     	 $(shape.d3Attributes)
-		 .attr("transform", d => "translate(" + xScale(d.x) + "," + yScale(d.y) + ")")
-	     .attr("d", symbol)
-     	 .attr("class", "shape-" + id)
-	"""
-	)
+    show(io, m, @js """
+	shape(
+		$(PublishToJS(shape.data)),
+		ctx,
+		x_scale,
+		y_scale,
+		$(PublishToJS(to_named_tuple(shape.attributes))),
+		$(shape.id),
+		$(shape.shapeType)
+	);
+	""")
 end
 
-# ╔═╡ 59af5f8a-8383-4d3e-bc9b-39a99769515e
-Base.show(io::IO,  m::MIME"text/javascript", shapeType::ShapeType) = Base.show(io, m, HypertextLiteral.JavaScript("d3.symbol" * (string(shapeType))))
+# ╔═╡ 8bd162c2-c572-43c5-b34a-f9846337b6a0
+Base.show(io::IO, m::MIME"text/html", shape::Shape) = show(io, m, @htl("""
+  <span id=$(shape.id)>
+  <script id="preview-$(shape.id)">
+	const { d3, shape_standalone } = $(import_local_js(bundle_code));
+	const svg = this == null ? DOM.svg(600, 300) : this;
+	const s = this == null ? d3.select(svg) : this.s;
+
+	shape_standalone(
+		$(PublishToJS(shape.data)),
+		s,
+		$(PublishToJS(to_named_tuple(shape.attributes))),
+		$(shape.id),
+		$(shape.shapeType)
+	);
+
+	const output = svg
+	output.s = s
+	return output
+  </script>
+  </span>
+"""))
 
 # ╔═╡ e3c572e1-f4df-4b55-8ada-2221cffca8a7
 md"# Example"
 
-# ╔═╡ 231107ce-cdc2-413f-91d0-5df25124d9b6
-@only_in_nb x = collect(1:5)
+# ╔═╡ 3e12e1ae-f0d6-4842-8db9-1a360d0d77f4
+@only_in_nb sz_ui = @bind sz Slider(0:30)
 
-# ╔═╡ 75adb70c-1cb0-4dd3-8ee4-a054e32094c9
-@only_in_nb y = [rand() for _ ∈ x]
+# ╔═╡ ea333c2b-b1b1-4da0-a994-68dfa15daa3f
+@only_in_nb x = collect(0:sz);
+
+# ╔═╡ 423b340f-b594-435b-81f1-75d00304364b
+@only_in_nb y = vcat([rand() for _ ∈ (0:sz)]);
 
 # ╔═╡ 55930668-9a5d-4352-bfac-1332355f3afc
-@only_in_nb size = [rand() * rand() * 5000 for i ∈ 1:length(x)]
+@only_in_nb size = [rand() * rand() * 4000 for i ∈ 1:length(x)];
 
-# ╔═╡ 545a44dc-3a67-4cdf-92f4-fbc33342e2ef
-@only_in_nb D3Canvas([Shape(x, y, size;
-    cwidth=300,
-	cheight=300,
-	offset=50,
-	d3Attributes=D3Attributes(;attributes=Dict("fill" => "blue")),
-	shapeType=Triangle),
-	Shape(x, y, size .* 0.5;
-    cwidth=300,
-	cheight=300,
-	offset=50,
-	d3Attributes=D3Attributes(;attributes=Dict("fill" => "red"))),
-	Shape(x, y, size .* 0.25;
-    cwidth=300,
-	cheight=300,
-	offset=50,
-	d3Attributes=D3Attributes(;attributes=Dict("fill" => "green")),
-	shapeType=Square)
-], "circle_example";
-	d3Attributes=D3Attributes(;
-		attributes=Dict(
-			"viewBox" => "0 0 300 300"
-		),
-		style=Dict(
-			"width" => "300",
-			"height" => "300"
-		)
-))
+# ╔═╡ a680501f-e204-4c6f-b2c5-e630be97cdab
+@only_in_nb @bind circleevents circles = Shape(x, y, size, "circle-id";
+	attributes=D3Attr(;
+		attr=(;fill="rgba(0, 255, 0, 0.5)"),
+		events=["click", "mouseover", "mousemove"],
+		duration=400
+	)
+)
+
+# ╔═╡ 0190c960-1ee9-44c1-b5d2-2f2bbeb26291
+@only_in_nb ismissing(circleevents) ? md"" : @htl("""
+	$([@htl("""<h4>$ev : $(descr["count"])</h4>""") for (ev, descr) ∈ circleevents])
+""")
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 AbstractPlutoDingetjes = "6e696c72-6542-2067-7265-42206c756150"
+Deno_jll = "04572ae6-984a-583e-9378-9577a1c2574d"
 HypertextLiteral = "ac1192a8-f4b3-4bfe-ba22-af5b92cd3ab2"
 Parameters = "d96e819e-fc66-5662-9728-84c9c7592b0a"
 PlutoDevMacros = "a0499f29-c39b-4c5c-807c-88074221b949"
@@ -133,6 +142,7 @@ PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 
 [compat]
 AbstractPlutoDingetjes = "~1.1.4"
+Deno_jll = "~1.20.4"
 HypertextLiteral = "~0.9.3"
 Parameters = "~0.12.3"
 PlutoDevMacros = "~0.4.5"
@@ -143,7 +153,7 @@ PlutoUI = "~0.7.37"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.7.1"
+julia_version = "1.7.2"
 manifest_format = "2.0"
 
 [[deps.AbstractPlutoDingetjes]]
@@ -175,6 +185,12 @@ uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
 deps = ["Printf"]
 uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
 
+[[deps.Deno_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "970da1e64a94f13b51c81691c376a1d5a83a0b3c"
+uuid = "04572ae6-984a-583e-9378-9577a1c2574d"
+version = "1.20.4+0"
+
 [[deps.Downloads]]
 deps = ["ArgTools", "LibCURL", "NetworkOptions"]
 uuid = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
@@ -205,6 +221,12 @@ version = "0.2.2"
 [[deps.InteractiveUtils]]
 deps = ["Markdown"]
 uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
+
+[[deps.JLLWrappers]]
+deps = ["Preferences"]
+git-tree-sha1 = "abc9885a7ca2052a736a600f7fa66209f96506e1"
+uuid = "692b3bcd-3c85-4b1f-b108-f13ce0eb3210"
+version = "1.4.1"
 
 [[deps.JSON]]
 deps = ["Dates", "Mmap", "Parsers", "Unicode"]
@@ -298,6 +320,12 @@ git-tree-sha1 = "bf0a1121af131d9974241ba53f601211e9303a9e"
 uuid = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 version = "0.7.37"
 
+[[deps.Preferences]]
+deps = ["TOML"]
+git-tree-sha1 = "d3538e7f8a790dc8903519090857ef8e1283eecd"
+uuid = "21216c6a-2e73-6563-6e65-726566657250"
+version = "1.2.5"
+
 [[deps.Printf]]
 deps = ["Unicode"]
 uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
@@ -380,22 +408,23 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 """
 
 # ╔═╡ Cell order:
-# ╠═56c9d966-382d-4c31-95ae-3af31be8e319
-# ╠═e1ba78ff-a168-4a07-8b08-0299f83bc70f
+# ╟─56c9d966-382d-4c31-95ae-3af31be8e319
+# ╟─e1ba78ff-a168-4a07-8b08-0299f83bc70f
 # ╠═48c1bb3e-7a28-4784-bc2a-64b19bd58b49
 # ╠═a084c49d-b1de-4033-93be-6d747cc66696
 # ╟─f956d529-3001-4488-9898-db01aa6add73
-# ╟─5ae0cf49-aa13-4681-b9d1-0383cd39d8f1
-# ╠═e00085a9-8fc3-4205-8037-b9ddb7090862
-# ╠═59af5f8a-8383-4d3e-bc9b-39a99769515e
 # ╟─5e895427-8660-44b2-8639-f0f3d701265d
 # ╠═3dbad6fc-e54e-49ee-a5f2-31ace0581812
+# ╠═a171006f-2e4a-437b-a474-8f31cb261e23
 # ╟─3caffb89-d565-43b0-85ae-3a431d378f67
 # ╠═3d5b3b66-70d6-4ee7-b87d-e95f5fbe884a
-# ╠═e3c572e1-f4df-4b55-8ada-2221cffca8a7
-# ╠═231107ce-cdc2-413f-91d0-5df25124d9b6
-# ╠═75adb70c-1cb0-4dd3-8ee4-a054e32094c9
+# ╠═8bd162c2-c572-43c5-b34a-f9846337b6a0
+# ╟─e3c572e1-f4df-4b55-8ada-2221cffca8a7
+# ╠═3e12e1ae-f0d6-4842-8db9-1a360d0d77f4
+# ╠═ea333c2b-b1b1-4da0-a994-68dfa15daa3f
+# ╠═423b340f-b594-435b-81f1-75d00304364b
 # ╠═55930668-9a5d-4352-bfac-1332355f3afc
-# ╠═545a44dc-3a67-4cdf-92f4-fbc33342e2ef
+# ╟─0190c960-1ee9-44c1-b5d2-2f2bbeb26291
+# ╠═a680501f-e204-4c6f-b2c5-e630be97cdab
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

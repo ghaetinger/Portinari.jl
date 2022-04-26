@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.18.1
+# v0.18.4
 
 using Markdown
 using InteractiveUtils
@@ -15,7 +15,7 @@ macro bind(def, element)
 end
 
 # ╔═╡ 8bbbffda-f8ed-4d4a-b56b-dd0e1327e4da
-using AbstractPlutoDingetjes, HypertextLiteral, Parameters, PlutoUI, PlutoDevMacros
+using AbstractPlutoDingetjes, HypertextLiteral, Parameters, PlutoUI, PlutoDevMacros, Deno_jll
 
 # ╔═╡ 96869bca-d552-4212-bb4b-969e68d0a990
 PlutoUI.TableOfContents()
@@ -24,16 +24,10 @@ PlutoUI.TableOfContents()
 md"# Ingredients"
 
 # ╔═╡ 59597ab2-369e-4a9f-921a-d63649d1bba4
-@plutoinclude "./linear_scale.jl" "all"
+@plutoinclude "./context.jl" "all"
 
 # ╔═╡ b30f2165-0980-42c9-a3cf-e36033083a2a
 md"# Line"
-
-# ╔═╡ 301b949b-176f-4d84-8c2a-6c77edfb112b
-md"## Curve Types"
-
-# ╔═╡ ef6c7fdc-fbec-4aca-8bdf-f66c14aa6fd1
-@enum Curve Cardinal Natural CatmullRom MonotoneX MonotoneY Basis BasisClosed
 
 # ╔═╡ cf44495e-6bb9-456b-bcd5-a06b7b6e2d0e
 md"## Structure"
@@ -41,125 +35,148 @@ md"## Structure"
 # ╔═╡ 5984fc30-37d1-4e6d-beab-2233c928173d
 begin
   struct Line <: D3Component
-    data         :: Vector{NamedTuple{(:x, :y), Tuple{<:Real, <:Real}}}
-	scaleX       :: LinearScale
-	scaleY       :: LinearScale
-	d3Attributes :: D3Attributes
-	curveType    :: Curve
+    data       :: Vector{NamedTuple{(:x, :y), Tuple{<:Real, <:Real}}}
+	attributes :: D3Attr
+	curveType  :: Curve
+	id         :: String
   end
 
-  Line(x, y;
-        cwidth=100,
-        cheight=100,
-        offset=0,
-        d3Attributes=D3Attributes(),
-	    curveType=Natural
+Line(x, y, id;
+        attributes=D3Attr(), curveType=Linear
   ) = Line(
 	  [(x=x[i], y=y[i]) for i ∈ 1:length(x)],
-	  LinearScale(x, cwidth, offset),
-	  LinearScale(y, cheight, offset),
-	  d3Attributes,
-	  curveType
+	  attributes,
+	  curveType,
+	  id
   )
 end;
+
+# ╔═╡ e2ef20fd-ba3d-4c4b-9d1d-ea8f64a3b48d
+function Base.extrema(line::Line)
+	xs = (v -> v.x).(line.data)
+	ys = (v -> v.y).(line.data)
+	return (minx=minimum(xs), miny=minimum(ys), maxx=maximum(xs), maxy=maximum(ys))
+end
 
 # ╔═╡ abec8fbc-e87e-484a-8386-f133d28eacab
 md"## Javascript Snippet"
 
 # ╔═╡ 92161843-357d-47ac-8da3-27b134b22084
 Base.show(io::IO, m::MIME"text/javascript", line::Line) =
-	show(io, m, @js """
-    	const xScale = $(line.scaleX)();
-    	const yScale = $(line.scaleY)();
-    	const path = d3.line()
-					   .x(d => xScale(d.x))
-      				   .y(d => yScale(d.y))
-      				   .curve(d3.$(line.curveType))
-
-		const data = $(line.data);
-    	s.selectAll(".line-" + id)
-	     .data([data])
-     	 .join("path")
-     	 $(line.d3Attributes)
-     	 .attr("d", path)
-     	 .attr("class", "line-" + id)
+    show(io, m, @js """
+	line(
+		$(PublishToJS(line.data)),
+		ctx,
+		x_scale,
+		y_scale,
+		$(PublishToJS(to_named_tuple(line.attributes))),
+		$(line.id),
+		d3.$(line.curveType)
+	);
 	""")
 
-# ╔═╡ a8697379-6c24-4357-909c-42d2e92798a5
-Base.show(io::IO,  m::MIME"text/javascript", curve::Curve) = Base.show(io, m, HypertextLiteral.JavaScript("curve" * string(curve)))
+# ╔═╡ d68ffecb-be5c-487c-8e22-7851312e9aa7
+Base.show(io::IO, m::MIME"text/html", line::Line) =	show(io, m, @htl("""
+	<span id=$(line.id)>
+	<script id="preview-$(line.id)">
+	const { d3, line_standalone } = $(import_local_js(bundle_code));
+	const svg = this == null ? DOM.svg(600, 300) : this;
+	const s = this == null ? d3.select(svg) : this.s;
+
+	line_standalone(
+		$(PublishToJS(line.data)),
+		s,
+		$(PublishToJS(to_named_tuple(line.attributes))),
+		$(line.id),
+		d3.$(line.curveType)
+	);
+
+	const output = svg
+	output.s = s
+	return output
+	</script>
+	</span>
+"""))
 
 # ╔═╡ ba53d4cc-b096-4fb8-86f3-ee8648c10cea
 md"# Example"
 
-# ╔═╡ 0b664967-afb7-4b6f-904d-0ebcc43e1b00
-@only_in_nb x = collect(1:5)
+# ╔═╡ 93677f4d-c031-4432-8705-56575e20515b
+@only_in_nb sz_ui = @bind sz Slider(0:30)
+
+# ╔═╡ 19a6176a-9a60-4e6c-86e0-38303bb78813
+@only_in_nb x = collect(0:sz+1);
 
 # ╔═╡ 99fdeb31-01b8-4be5-bb42-fcc4f2da91ef
-@only_in_nb y = [rand() for _ ∈ x]
+@only_in_nb y = vcat([1], [rand() for _ ∈ (1:sz+1)]);
 
-# ╔═╡ 1a2da5d5-5908-4abd-a7bb-1fa3da814cee
-@only_in_nb @bind hoveraction D3Canvas([
-	
-	Line(x, y;
-    cwidth=300,
-	cheight=300,
-	offset=50,
-	d3Attributes=D3Attributes(;
-		attributes=Dict(
-			"fill" => "none",
-			"stroke" => "red",
-			"stroke-width" => "15.0"
+# ╔═╡ 0a27990c-f78e-4e10-875c-bbb07a2712a6
+@only_in_nb @bind lineev line = Line(x, y, "line_id";
+	attributes=D3Attr(;
+		attr=(;
+			fill="none",
+			stroke="green",
+			var"stroke-width"="3.0"
 		),
-		events=["mouseover"]
+		events=["click", "mouseover", "mousemove"],
+		duration=200
 	),
-	curveType=BasisClosed
+	curveType=Linear
 )
-	Line(x, y;
-    cwidth=300,
-	cheight=300,
-	offset=50,
-	d3Attributes=D3Attributes(;
-		attributes=Dict(
-			"fill" => "none",
-			"stroke" => "gold",
-			"stroke-width" => "5.0"
-		),
-		events=["mouseover"]
-	),
-	curveType=BasisClosed
-)
-], "line_example";
-	d3Attributes=D3Attributes(;
-		attributes=Dict(
-			"viewBox" => "0 0 300 300"
-		),
-		style=Dict(
-			"width" => "300",
-			"height" => "300"
-		)
-))
 
-# ╔═╡ cde1711a-6425-4c6a-b20e-6084dce044e8
+# ╔═╡ 94478d85-7d0e-44e0-bf13-a8a84a2ad83d
+@only_in_nb ismissing(lineev) ? md"" : @htl("""
+	$([@htl("""<h4>$ev : $(descr["count"])</h4>""") for (ev, descr) ∈ lineev])
+""")
+
+# ╔═╡ 702c3e6a-938f-4619-87d6-9c0313402158
+@only_in_nb ctx = Context(
+	(;domain=[extrema(x)...], range=[0, 690]),
+	(;domain=[extrema(y)...], range=[0, 300]),
+	[line],
+	"ctx"
+);
+
+# ╔═╡ 1cd9f10e-e995-451a-91d2-b97520ee96e3
 @only_in_nb begin
-	if hoveraction |> keys |> isempty
-		md"# 😐"
-	elseif !haskey(hoveraction, "1-mouseover")
-		if hoveraction["0-mouseover"]["count"] > 10
-			md"# 😀"
-		else
-			md"# 😊"
-		end
-	elseif hoveraction["1-mouseover"]["count"] > 10
-		md"# 😭"
-	else
-		md"# 😥"
-	end
+	rows = 16
+	cols = 16
+	ctxs = []
+	rows_val = 1 / rows
+	cols_val = 1 / cols
+
+	row = Context(
+		(domain=[0, 0], range=[0, 690]),
+		(domain=[0, 0], range=[0, 300]),
+		[Scale(Restyle(ctx, 
+			D3Attr(;
+				style=(;
+					transform= i % 2 == 0 ? "scale(1, 1)" : "scale(-1, 1)",
+					stroke="rgb($(rand() * 255), $(rand() * 255), $(rand() * 255))"
+				)),
+			"restyle-$i"
+		), (i * cols_val, (i+1) * cols_val), (0.0, 1.0), "scale-$i") for i ∈ (0:cols-1)] |> vec,
+		"row"
+	);
+
+	Context(
+		(domain=[0, 0], range=[0, 690]),
+		(domain=[0, 0], range=[0, 600]),
+		[Scale(Restyle(row, 
+			D3Attr(;style=(;transform= i % 2 == 0 ? "scale(1, 1)" : "scale(1, -1)")),
+			"restyle-row-$i"
+		), (0.0, 1.0), (i * rows_val, (i+1) * rows_val), "scale-row-$i")
+			for i ∈ (0:rows-1)] |> vec,
+		"all";
+		drawAxis=false
+	)
 end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 AbstractPlutoDingetjes = "6e696c72-6542-2067-7265-42206c756150"
+Deno_jll = "04572ae6-984a-583e-9378-9577a1c2574d"
 HypertextLiteral = "ac1192a8-f4b3-4bfe-ba22-af5b92cd3ab2"
 Parameters = "d96e819e-fc66-5662-9728-84c9c7592b0a"
 PlutoDevMacros = "a0499f29-c39b-4c5c-807c-88074221b949"
@@ -167,6 +184,7 @@ PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 
 [compat]
 AbstractPlutoDingetjes = "~1.1.4"
+Deno_jll = "~1.20.4"
 HypertextLiteral = "~0.9.3"
 Parameters = "~0.12.3"
 PlutoDevMacros = "~0.4.5"
@@ -177,7 +195,7 @@ PlutoUI = "~0.7.37"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.7.1"
+julia_version = "1.7.2"
 manifest_format = "2.0"
 
 [[deps.AbstractPlutoDingetjes]]
@@ -209,6 +227,12 @@ uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
 deps = ["Printf"]
 uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
 
+[[deps.Deno_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "970da1e64a94f13b51c81691c376a1d5a83a0b3c"
+uuid = "04572ae6-984a-583e-9378-9577a1c2574d"
+version = "1.20.4+0"
+
 [[deps.Downloads]]
 deps = ["ArgTools", "LibCURL", "NetworkOptions"]
 uuid = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
@@ -239,6 +263,12 @@ version = "0.2.2"
 [[deps.InteractiveUtils]]
 deps = ["Markdown"]
 uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
+
+[[deps.JLLWrappers]]
+deps = ["Preferences"]
+git-tree-sha1 = "abc9885a7ca2052a736a600f7fa66209f96506e1"
+uuid = "692b3bcd-3c85-4b1f-b108-f13ce0eb3210"
+version = "1.4.1"
 
 [[deps.JSON]]
 deps = ["Dates", "Mmap", "Parsers", "Unicode"]
@@ -332,6 +362,12 @@ git-tree-sha1 = "bf0a1121af131d9974241ba53f601211e9303a9e"
 uuid = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 version = "0.7.37"
 
+[[deps.Preferences]]
+deps = ["TOML"]
+git-tree-sha1 = "d3538e7f8a790dc8903519090857ef8e1283eecd"
+uuid = "21216c6a-2e73-6563-6e65-726566657250"
+version = "1.2.5"
+
 [[deps.Printf]]
 deps = ["Unicode"]
 uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
@@ -419,17 +455,19 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╠═8bbbffda-f8ed-4d4a-b56b-dd0e1327e4da
 # ╠═59597ab2-369e-4a9f-921a-d63649d1bba4
 # ╟─b30f2165-0980-42c9-a3cf-e36033083a2a
-# ╟─301b949b-176f-4d84-8c2a-6c77edfb112b
-# ╠═ef6c7fdc-fbec-4aca-8bdf-f66c14aa6fd1
-# ╠═a8697379-6c24-4357-909c-42d2e92798a5
 # ╟─cf44495e-6bb9-456b-bcd5-a06b7b6e2d0e
 # ╠═5984fc30-37d1-4e6d-beab-2233c928173d
+# ╠═e2ef20fd-ba3d-4c4b-9d1d-ea8f64a3b48d
 # ╟─abec8fbc-e87e-484a-8386-f133d28eacab
 # ╠═92161843-357d-47ac-8da3-27b134b22084
+# ╠═d68ffecb-be5c-487c-8e22-7851312e9aa7
 # ╟─ba53d4cc-b096-4fb8-86f3-ee8648c10cea
-# ╠═0b664967-afb7-4b6f-904d-0ebcc43e1b00
+# ╠═19a6176a-9a60-4e6c-86e0-38303bb78813
 # ╠═99fdeb31-01b8-4be5-bb42-fcc4f2da91ef
-# ╠═cde1711a-6425-4c6a-b20e-6084dce044e8
-# ╠═1a2da5d5-5908-4abd-a7bb-1fa3da814cee
+# ╟─94478d85-7d0e-44e0-bf13-a8a84a2ad83d
+# ╠═0a27990c-f78e-4e10-875c-bbb07a2712a6
+# ╠═702c3e6a-938f-4619-87d6-9c0313402158
+# ╟─1cd9f10e-e995-451a-91d2-b97520ee96e3
+# ╟─93677f4d-c031-4432-8705-56575e20515b
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
