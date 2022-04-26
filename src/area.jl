@@ -29,12 +29,6 @@ md"# Ingredients"
 # ╔═╡ 93ede436-8e57-4030-93ae-74567844f624
 md"# Area"
 
-# ╔═╡ a6ef4beb-dd0d-4517-8382-30bbdfb685cc
-md"## Curve Types"
-
-# ╔═╡ 3bf51d0b-5d80-4321-9ecb-6680c70fffec
-@enum Curve Cardinal Natural CatmullRom MonotoneX MonotoneY Basis BasisClosed
-
 # ╔═╡ 73005a4c-7d7a-41b6-ad8c-52780d51f24c
 md"## Structure"
 
@@ -104,9 +98,6 @@ Base.show(io::IO, m::MIME"text/html", area::Area) =	show(io, m, @htl("""
 	</script>
 	</span>
 """))
-
-# ╔═╡ c9bed508-ea77-4ae4-8876-ac2a5ec62114
-Base.show(io::IO,  m::MIME"text/javascript", curve::Curve) = Base.show(io, m, HypertextLiteral.JavaScript("curve" * string(curve)))
 
 # ╔═╡ 354f2549-8d20-4ac3-a6f0-5acf1ad4fde4
 md"# Example"
@@ -417,9 +408,6 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╠═b9c61535-53a8-4442-a489-0ba662d88050
 # ╠═40896e22-e6a0-4dfb-b202-9764de200d79
 # ╟─93ede436-8e57-4030-93ae-74567844f624
-# ╟─a6ef4beb-dd0d-4517-8382-30bbdfb685cc
-# ╠═3bf51d0b-5d80-4321-9ecb-6680c70fffec
-# ╠═c9bed508-ea77-4ae4-8876-ac2a5ec62114
 # ╟─73005a4c-7d7a-41b6-ad8c-52780d51f24c
 # ╠═6a107d2b-96db-465a-8582-0c6ab5699043
 # ╠═b7c8ca6e-bec8-43a7-a3c9-8ad09d017e5e

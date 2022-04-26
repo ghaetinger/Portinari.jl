@@ -29,12 +29,6 @@ md"# Ingredients"
 # ╔═╡ f956d529-3001-4488-9898-db01aa6add73
 md"# Shape"
 
-# ╔═╡ 5ae0cf49-aa13-4681-b9d1-0383cd39d8f1
-md"## Types"
-
-# ╔═╡ e00085a9-8fc3-4205-8037-b9ddb7090862
-@enum ShapeType Square Circle Triangle
-
 # ╔═╡ 5e895427-8660-44b2-8639-f0f3d701265d
 md"## Structure"
 
@@ -106,9 +100,6 @@ Base.show(io::IO, m::MIME"text/html", shape::Shape) = show(io, m, @htl("""
   </script>
   </span>
 """))
-
-# ╔═╡ 59af5f8a-8383-4d3e-bc9b-39a99769515e
-Base.show(io::IO,  m::MIME"text/javascript", shapeType::ShapeType) = Base.show(io, m, HypertextLiteral.JavaScript("d3.symbol" * (string(shapeType))))
 
 # ╔═╡ e3c572e1-f4df-4b55-8ada-2221cffca8a7
 md"# Example"
@@ -422,9 +413,6 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╠═48c1bb3e-7a28-4784-bc2a-64b19bd58b49
 # ╠═a084c49d-b1de-4033-93be-6d747cc66696
 # ╟─f956d529-3001-4488-9898-db01aa6add73
-# ╟─5ae0cf49-aa13-4681-b9d1-0383cd39d8f1
-# ╠═e00085a9-8fc3-4205-8037-b9ddb7090862
-# ╠═59af5f8a-8383-4d3e-bc9b-39a99769515e
 # ╟─5e895427-8660-44b2-8639-f0f3d701265d
 # ╠═3dbad6fc-e54e-49ee-a5f2-31ace0581812
 # ╠═a171006f-2e4a-437b-a474-8f31cb261e23

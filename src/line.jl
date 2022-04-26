@@ -29,12 +29,6 @@ md"# Ingredients"
 # ╔═╡ b30f2165-0980-42c9-a3cf-e36033083a2a
 md"# Line"
 
-# ╔═╡ 301b949b-176f-4d84-8c2a-6c77edfb112b
-md"## Curve Types"
-
-# ╔═╡ ef6c7fdc-fbec-4aca-8bdf-f66c14aa6fd1
-@enum Curve Cardinal Natural CatmullRom MonotoneX MonotoneY Basis BasisClosed Linear LinearClosed
-
 # ╔═╡ cf44495e-6bb9-456b-bcd5-a06b7b6e2d0e
 md"## Structure"
 
@@ -104,9 +98,6 @@ Base.show(io::IO, m::MIME"text/html", line::Line) =	show(io, m, @htl("""
 	</span>
 """))
 
-# ╔═╡ a8697379-6c24-4357-909c-42d2e92798a5
-Base.show(io::IO,  m::MIME"text/javascript", curve::Curve) = Base.show(io, m, HypertextLiteral.JavaScript("curve" * string(curve)))
-
 # ╔═╡ ba53d4cc-b096-4fb8-86f3-ee8648c10cea
 md"# Example"
 
@@ -124,12 +115,13 @@ md"# Example"
 	attributes=D3Attr(;
 		attr=(;
 			fill="none",
-			#stroke="green",
+			stroke="green",
 			var"stroke-width"="3.0"
 		),
 		events=["click", "mouseover", "mousemove"],
 		duration=200
-	)
+	),
+	curveType=Linear
 )
 
 # ╔═╡ 94478d85-7d0e-44e0-bf13-a8a84a2ad83d
@@ -463,9 +455,6 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╠═8bbbffda-f8ed-4d4a-b56b-dd0e1327e4da
 # ╠═59597ab2-369e-4a9f-921a-d63649d1bba4
 # ╟─b30f2165-0980-42c9-a3cf-e36033083a2a
-# ╟─301b949b-176f-4d84-8c2a-6c77edfb112b
-# ╠═ef6c7fdc-fbec-4aca-8bdf-f66c14aa6fd1
-# ╠═a8697379-6c24-4357-909c-42d2e92798a5
 # ╟─cf44495e-6bb9-456b-bcd5-a06b7b6e2d0e
 # ╠═5984fc30-37d1-4e6d-beab-2233c928173d
 # ╠═e2ef20fd-ba3d-4c4b-9d1d-ea8f64a3b48d
