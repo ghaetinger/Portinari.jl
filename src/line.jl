@@ -33,7 +33,7 @@ md"# Line"
 md"## Curve Types"
 
 # ╔═╡ ef6c7fdc-fbec-4aca-8bdf-f66c14aa6fd1
-@enum Curve Cardinal Natural CatmullRom MonotoneX MonotoneY Basis BasisClosed
+@enum Curve Cardinal Natural CatmullRom MonotoneX MonotoneY Basis BasisClosed Linear LinearClosed
 
 # ╔═╡ cf44495e-6bb9-456b-bcd5-a06b7b6e2d0e
 md"## Structure"
@@ -48,7 +48,7 @@ begin
   end
 
 Line(x, y, id;
-        attributes=D3Attr(), curveType=Natural
+        attributes=D3Attr(), curveType=Linear
   ) = Line(
 	  [(x=x[i], y=y[i]) for i ∈ 1:length(x)],
 	  attributes,
@@ -129,8 +129,7 @@ md"# Example"
 		),
 		events=["click", "mouseover", "mousemove"],
 		duration=200
-	),
-	curveType=Natural
+	)
 )
 
 # ╔═╡ 94478d85-7d0e-44e0-bf13-a8a84a2ad83d
