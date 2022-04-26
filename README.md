@@ -4,7 +4,9 @@ A Julian abstraction for D3 to be run inside of Pluto! Still in its early stages
 
 ## Small demo
 
-https://user-images.githubusercontent.com/23220288/161279567-6ab6a7b8-3ee0-404b-b003-8da99022045a.mp4
+
+https://user-images.githubusercontent.com/23220288/165318957-689056e7-86af-4c77-8bf0-db3d6bc39152.mp4
+
 
 # Features
 
@@ -12,6 +14,7 @@ https://user-images.githubusercontent.com/23220288/161279567-6ab6a7b8-3ee0-404b-
 - Areas
 - Shapes (scatter)
 - Pluto hooked events
+- Composability!
 
 # Notebook Hierarchy
 
