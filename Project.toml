@@ -14,7 +14,7 @@ PlutoDevMacros = "a0499f29-c39b-4c5c-807c-88074221b949"
 
 [compat]
 julia = "1.6"
-AbstractPlutoDingetjes = ">=1.1.4"
-HypertextLiteral = ">=0.9.3"
-Parameters = ">=0.12.3"
-PlutoDevMacros = ">=0.4.5"
+AbstractPlutoDingetjes = "1.1.4"
+HypertextLiteral = "0.9.3"
+Parameters = "0.12.3"
+PlutoDevMacros = "0.4.5"
