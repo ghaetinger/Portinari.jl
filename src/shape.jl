@@ -15,7 +15,10 @@ macro bind(def, element)
 end
 
 # ╔═╡ 48c1bb3e-7a28-4784-bc2a-64b19bd58b49
-using AbstractPlutoDingetjes, HypertextLiteral, Parameters, PlutoUI, PlutoDevMacros, Deno_jll
+using AbstractPlutoDingetjes, HypertextLiteral, Parameters, PlutoDevMacros, Deno_jll
+
+# ╔═╡ 4cd3dc09-b0ac-4e1e-9087-39a575ae7892
+@only_in_nb using PlutoUI
 
 # ╔═╡ 56c9d966-382d-4c31-95ae-3af31be8e319
 @only_in_nb PlutoUI.TableOfContents()
@@ -146,7 +149,7 @@ Deno_jll = "~1.20.4"
 HypertextLiteral = "~0.9.3"
 Parameters = "~0.12.3"
 PlutoDevMacros = "~0.4.5"
-PlutoUI = "~0.7.37"
+PlutoUI = "~0.7.38"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
@@ -300,9 +303,9 @@ version = "0.12.3"
 
 [[deps.Parsers]]
 deps = ["Dates"]
-git-tree-sha1 = "85b5da0fa43588c75bb1ff986493443f821c70b7"
+git-tree-sha1 = "1285416549ccfcdf0c50d4997a94331e88d68413"
 uuid = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
-version = "2.2.3"
+version = "2.3.1"
 
 [[deps.Pkg]]
 deps = ["Artifacts", "Dates", "Downloads", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "Serialization", "TOML", "Tar", "UUIDs", "p7zip_jll"]
@@ -316,9 +319,9 @@ version = "0.4.5"
 
 [[deps.PlutoUI]]
 deps = ["AbstractPlutoDingetjes", "Base64", "ColorTypes", "Dates", "Hyperscript", "HypertextLiteral", "IOCapture", "InteractiveUtils", "JSON", "Logging", "Markdown", "Random", "Reexport", "UUIDs"]
-git-tree-sha1 = "bf0a1121af131d9974241ba53f601211e9303a9e"
+git-tree-sha1 = "670e559e5c8e191ded66fa9ea89c97f10376bb4c"
 uuid = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
-version = "0.7.37"
+version = "0.7.38"
 
 [[deps.Preferences]]
 deps = ["TOML"]
@@ -420,6 +423,7 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╠═3d5b3b66-70d6-4ee7-b87d-e95f5fbe884a
 # ╠═8bd162c2-c572-43c5-b34a-f9846337b6a0
 # ╟─e3c572e1-f4df-4b55-8ada-2221cffca8a7
+# ╠═4cd3dc09-b0ac-4e1e-9087-39a575ae7892
 # ╠═3e12e1ae-f0d6-4842-8db9-1a360d0d77f4
 # ╠═ea333c2b-b1b1-4da0-a994-68dfa15daa3f
 # ╠═423b340f-b594-435b-81f1-75d00304364b

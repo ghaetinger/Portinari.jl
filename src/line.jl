@@ -15,10 +15,13 @@ macro bind(def, element)
 end
 
 # ╔═╡ 8bbbffda-f8ed-4d4a-b56b-dd0e1327e4da
-using AbstractPlutoDingetjes, HypertextLiteral, Parameters, PlutoUI, PlutoDevMacros, Deno_jll
+using AbstractPlutoDingetjes, HypertextLiteral, Parameters, PlutoDevMacros, Deno_jll
+
+# ╔═╡ fabe5948-4505-4b0d-b72d-1cd52e7d3064
+@only_in_nb using PlutoUI
 
 # ╔═╡ 96869bca-d552-4212-bb4b-969e68d0a990
-PlutoUI.TableOfContents()
+@only_in_nb PlutoUI.TableOfContents()
 
 # ╔═╡ 02c62a40-253e-49ef-8ea9-beb2cffe4196
 md"# Ingredients"
@@ -188,7 +191,7 @@ Deno_jll = "~1.20.4"
 HypertextLiteral = "~0.9.3"
 Parameters = "~0.12.3"
 PlutoDevMacros = "~0.4.5"
-PlutoUI = "~0.7.37"
+PlutoUI = "~0.7.38"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
@@ -342,9 +345,9 @@ version = "0.12.3"
 
 [[deps.Parsers]]
 deps = ["Dates"]
-git-tree-sha1 = "85b5da0fa43588c75bb1ff986493443f821c70b7"
+git-tree-sha1 = "1285416549ccfcdf0c50d4997a94331e88d68413"
 uuid = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
-version = "2.2.3"
+version = "2.3.1"
 
 [[deps.Pkg]]
 deps = ["Artifacts", "Dates", "Downloads", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "Serialization", "TOML", "Tar", "UUIDs", "p7zip_jll"]
@@ -358,9 +361,9 @@ version = "0.4.5"
 
 [[deps.PlutoUI]]
 deps = ["AbstractPlutoDingetjes", "Base64", "ColorTypes", "Dates", "Hyperscript", "HypertextLiteral", "IOCapture", "InteractiveUtils", "JSON", "Logging", "Markdown", "Random", "Reexport", "UUIDs"]
-git-tree-sha1 = "bf0a1121af131d9974241ba53f601211e9303a9e"
+git-tree-sha1 = "670e559e5c8e191ded66fa9ea89c97f10376bb4c"
 uuid = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
-version = "0.7.37"
+version = "0.7.38"
 
 [[deps.Preferences]]
 deps = ["TOML"]
@@ -462,6 +465,7 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╠═92161843-357d-47ac-8da3-27b134b22084
 # ╠═d68ffecb-be5c-487c-8e22-7851312e9aa7
 # ╟─ba53d4cc-b096-4fb8-86f3-ee8648c10cea
+# ╠═fabe5948-4505-4b0d-b72d-1cd52e7d3064
 # ╠═19a6176a-9a60-4e6c-86e0-38303bb78813
 # ╠═99fdeb31-01b8-4be5-bb42-fcc4f2da91ef
 # ╟─94478d85-7d0e-44e0-bf13-a8a84a2ad83d
