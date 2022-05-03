@@ -1,8 +1,8 @@
-# Portinari.jl
+![Mestiço, Portinari - 1934 (Made with Portinari.jl!)](./res/portinari.svg)
+
+_Mestiço, by Portinari 1934 made with Portinari.jl_
 
 A Julian abstraction for D3 to be run inside of Pluto! Still in its early stages.
-
-![Mestiço, Portinari - 1934 (Made with Portinari.jl!)](./res/portinari.svg)
 
 ## Small demo
 
