@@ -1,4 +1,4 @@
-![Mestiço, Portinari - 1934 (Made with Portinari.jl!)](./res/portinari.svg)
+![Mestiço, Portinari - 1934 (Made with Portinari.jl!)](./res/portinari.png)
 
 _Mestiço, by Portinari 1934 made with Portinari.jl_
 
