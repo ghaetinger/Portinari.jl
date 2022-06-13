@@ -1,3 +1,99 @@
+### A Pluto.jl notebook ###
+# v0.19.5
+
+using Markdown
+using InteractiveUtils
+
+# ╔═╡ ed6834a3-a7fc-44fe-9bec-f803135b2ee4
+using AbstractPlutoDingetjes, HypertextLiteral, Parameters, PlutoDevMacros, Deno_jll
+
+# ╔═╡ 86a8ff20-f99b-41b5-8598-ccbe24735474
+@only_in_nb using PlutoUI
+
+# ╔═╡ ca6c2091-0e06-4f75-b762-27d3d65580af
+@only_in_nb PlutoUI.TableOfContents()
+
+# ╔═╡ 6ae7ce1d-fd4c-4884-a49d-b2318bfa9881
+md"# Ingredients"
+
+# ╔═╡ ca2c5d3d-d77f-462f-949b-ef85c6db5910
+@plutoinclude "./context.jl" "all"
+
+# ╔═╡ 07535f14-08ac-4779-8c08-2bf295c28f9f
+md"# Axis"
+
+# ╔═╡ d4fdafe7-97c8-4e5d-969f-cfa20a831955
+md"## Structure"
+
+# ╔═╡ ee072da1-9c81-4310-a98a-638e782bb3a0
+@enum Direction Right Left Top Bottom
+
+# ╔═╡ 0c147c8a-df2f-4e0f-9760-83c7bab2e7e9
+begin
+  struct Axis <: D3Component
+	direction    :: Direction
+	attributes   :: D3Attr
+	id           :: String
+  end
+
+  Axis(direction::Direction, id::String;
+	attributes=D3Attr()
+  ) = Axis(
+	  direction,
+	  attributes,
+	  id
+  )
+end;
+
+# ╔═╡ 7dc05859-dc1f-428d-83b4-d6275db2e247
+function bounds(axis::Axis)
+	xs = (v -> v.x).(data)
+	ys = reduce(vcat, (v -> [v.y0, v.y1]).(data)) 
+	return (minx=0, miny=0, maxx=1, maxy=1)
+end
+
+# ╔═╡ c13a4acc-dd77-4c91-b408-c68cea240684
+md"## Javascript Snippet"
+
+# ╔═╡ 88d1881f-1865-4c46-ac50-5e26eacb46d6
+Base.show(io::IO, m::MIME"text/javascript", axis::Axis) =
+    show(io, m, @js """
+	axis(
+		ctx,
+		$(PublishToJS(string(axis.direction))),
+		x_scale,
+		y_scale,
+		$(PublishToJS(to_named_tuple(axis.attributes))),
+		$(axis.id)
+	);
+	""")
+
+# ╔═╡ 25e92ec2-eaf2-46ba-8ec7-83fe19d2b9f1
+Base.show(io::IO, m::MIME"text/html", axis::Axis) =	show(io, m, @htl("""
+<b style="color: red">You should try rendering axis with other things</b>
+"""))
+
+# ╔═╡ 00000000-0000-0000-0000-000000000001
+PLUTO_PROJECT_TOML_CONTENTS = """
+[deps]
+AbstractPlutoDingetjes = "6e696c72-6542-2067-7265-42206c756150"
+Deno_jll = "04572ae6-984a-583e-9378-9577a1c2574d"
+HypertextLiteral = "ac1192a8-f4b3-4bfe-ba22-af5b92cd3ab2"
+Parameters = "d96e819e-fc66-5662-9728-84c9c7592b0a"
+PlutoDevMacros = "a0499f29-c39b-4c5c-807c-88074221b949"
+PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
+
+[compat]
+AbstractPlutoDingetjes = "~1.1.4"
+Deno_jll = "~1.20.4"
+HypertextLiteral = "~0.9.4"
+Parameters = "~0.12.3"
+PlutoDevMacros = "~0.4.5"
+PlutoUI = "~0.7.39"
+"""
+
+# ╔═╡ 00000000-0000-0000-0000-000000000002
+PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
 julia_version = "1.7.3"
@@ -58,9 +154,10 @@ uuid = "47d2ed2b-36de-50cf-bf87-49c2cf4b8b91"
 version = "0.0.4"
 
 [[deps.HypertextLiteral]]
-git-tree-sha1 = "2b078b5a615c6c0396c77810d92ee8c6f470d238"
+deps = ["Tricks"]
+git-tree-sha1 = "c47c5fa4c5308f27ccaac35504858d8914e102f9"
 uuid = "ac1192a8-f4b3-4bfe-ba22-af5b92cd3ab2"
-version = "0.9.3"
+version = "0.9.4"
 
 [[deps.IOCapture]]
 deps = ["Logging", "Random"]
@@ -172,9 +269,9 @@ version = "0.7.39"
 
 [[deps.Preferences]]
 deps = ["TOML"]
-git-tree-sha1 = "d3538e7f8a790dc8903519090857ef8e1283eecd"
+git-tree-sha1 = "47e5f437cc0e7ef2ce8406ce1e7e24d44915f88d"
 uuid = "21216c6a-2e73-6563-6e65-726566657250"
-version = "1.2.5"
+version = "1.3.0"
 
 [[deps.Printf]]
 deps = ["Unicode"]
@@ -228,6 +325,11 @@ uuid = "a4e569a6-e804-4fa4-b0f3-eef7a1d5b13e"
 deps = ["InteractiveUtils", "Logging", "Random", "Serialization"]
 uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
+[[deps.Tricks]]
+git-tree-sha1 = "6bac775f2d42a611cdfcd1fb217ee719630c4175"
+uuid = "410a4b4d-49e4-4fbc-ab6d-cb71b17b3775"
+version = "0.1.6"
+
 [[deps.UUIDs]]
 deps = ["Random", "SHA"]
 uuid = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
@@ -255,3 +357,21 @@ uuid = "8e850ede-7688-5339-a07c-302acd2aaf8d"
 [[deps.p7zip_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
+"""
+
+# ╔═╡ Cell order:
+# ╟─ca6c2091-0e06-4f75-b762-27d3d65580af
+# ╟─86a8ff20-f99b-41b5-8598-ccbe24735474
+# ╠═6ae7ce1d-fd4c-4884-a49d-b2318bfa9881
+# ╠═ed6834a3-a7fc-44fe-9bec-f803135b2ee4
+# ╠═ca2c5d3d-d77f-462f-949b-ef85c6db5910
+# ╟─07535f14-08ac-4779-8c08-2bf295c28f9f
+# ╟─d4fdafe7-97c8-4e5d-969f-cfa20a831955
+# ╠═ee072da1-9c81-4310-a98a-638e782bb3a0
+# ╠═0c147c8a-df2f-4e0f-9760-83c7bab2e7e9
+# ╠═7dc05859-dc1f-428d-83b4-d6275db2e247
+# ╟─c13a4acc-dd77-4c91-b408-c68cea240684
+# ╠═88d1881f-1865-4c46-ac50-5e26eacb46d6
+# ╠═25e92ec2-eaf2-46ba-8ec7-83fe19d2b9f1
+# ╟─00000000-0000-0000-0000-000000000001
+# ╟─00000000-0000-0000-0000-000000000002

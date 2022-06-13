@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.18.4
+# v0.19.5
 
 using Markdown
 using InteractiveUtils
@@ -18,8 +18,8 @@ end
 begin
 	using Pkg
 	using Revise
-	Pkg.activate(Base.current_project(@__DIR__))
-	using Portinari, PlutoUI, HypertextLiteral
+	Pkg.activate(dirname(Base.current_project(@__DIR__)))
+	using PlutoUI, Portinari
 end
 
 # ╔═╡ dba679be-b646-48b2-ad36-e257fcc100f4
@@ -71,6 +71,23 @@ merge = Context(
 	"merge"
 )
 
+# ╔═╡ 6516c1ba-bbf3-466f-8619-4fa61838a5b0
+Context(
+	(;domain=([extrema(x)...]), range=[0, 630]),
+	(;domain=([extrema(y)...]), range=[0, 300]),
+	[
+		line,
+		Axis(Portinari.Right, "testaxis"; attributes=D3Attr(;
+			style=(;transform="translateX(315px)")
+		)),
+		Axis(Portinari.Bottom, "testaxisy"; attributes=D3Attr(;
+			style=(;transform="translateY(150px)")
+		))
+	],
+	"test";
+	drawAxis=false
+)
+
 # ╔═╡ Cell order:
 # ╠═82e0613e-b50e-11ec-0a7e-050ecf0c92ca
 # ╟─6c52e239-e5bd-47c2-af70-19be6545acb3
@@ -82,3 +99,4 @@ merge = Context(
 # ╠═fa9c38b1-dbed-4fbd-a0a0-6ca80d38c855
 # ╠═6de965b1-62d8-491e-b632-386d8f7a0fca
 # ╟─dba679be-b646-48b2-ad36-e257fcc100f4
+# ╠═6516c1ba-bbf3-466f-8619-4fa61838a5b0

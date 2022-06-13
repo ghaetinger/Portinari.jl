@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.18.4
+# v0.19.5
 
 using Markdown
 using InteractiveUtils
@@ -27,10 +27,10 @@ md"## Structure"
 
 # ╔═╡ 82090d2a-bc09-4f5e-8377-3452fdaeca46
 begin
-	Axis = @NamedTuple{domain::Vector{<:Number}, range::Vector{<:Number}}
+	Dimension = @NamedTuple{domain::Vector{<:Number}, range::Vector{<:Number}}
 	struct Context <: D3Component
-		xAxis 	   :: Axis
-		yAxis 	   :: Axis
+		xAxis 	   :: Dimension
+		yAxis 	   :: Dimension
 		children   :: Vector{<:D3Component}
 		attributes :: D3Attr
 		embedX     :: Tuple{Float64, Float64}
@@ -106,7 +106,8 @@ Base.show(io::IO, m::MIME"text/html", ctx::Context) =
   		context,
   		context_standalone,
   		area, line, shape,
-  		area_standalone, line_standalone, shape_standalone
+  		area_standalone, line_standalone, shape_standalone,
+		axis
 	} = $(import_local_js(bundle_code));
 	
 	const svg = this == null ? DOM.svg($(maximum(ctx.xAxis.range)), $(maximum(ctx.yAxis.range))) : this;
@@ -154,7 +155,7 @@ PlutoUI = "~0.7.38"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.7.2"
+julia_version = "1.7.3"
 manifest_format = "2.0"
 
 [[deps.AbstractPlutoDingetjes]]
@@ -193,8 +194,11 @@ uuid = "04572ae6-984a-583e-9378-9577a1c2574d"
 version = "1.20.4+0"
 
 [[deps.Downloads]]
-deps = ["ArgTools", "LibCURL", "NetworkOptions"]
+deps = ["ArgTools", "FileWatching", "LibCURL", "NetworkOptions"]
 uuid = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
+
+[[deps.FileWatching]]
+uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
 
 [[deps.FixedPointNumbers]]
 deps = ["Statistics"]
