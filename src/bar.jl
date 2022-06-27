@@ -14,84 +14,78 @@ macro bind(def, element)
     end
 end
 
-# ╔═╡ 8bbbffda-f8ed-4d4a-b56b-dd0e1327e4da
+# ╔═╡ 6e1e9ba6-6486-417b-97cc-127a137eb59d
 using AbstractPlutoDingetjes, HypertextLiteral, Parameters, PlutoDevMacros, Deno_jll
 
-# ╔═╡ fabe5948-4505-4b0d-b72d-1cd52e7d3064
+# ╔═╡ f5754764-6985-48a0-881f-593e5a4bedd8
 @only_in_nb using PlutoUI
 
-# ╔═╡ 96869bca-d552-4212-bb4b-969e68d0a990
+# ╔═╡ a4821b5e-41dc-4cf1-8a35-dfebe7d0fbbf
 @only_in_nb PlutoUI.TableOfContents()
 
-# ╔═╡ 02c62a40-253e-49ef-8ea9-beb2cffe4196
+# ╔═╡ c6a687a8-16ff-43ea-833e-8dd058ebedf1
 md"# Ingredients"
 
-# ╔═╡ 59597ab2-369e-4a9f-921a-d63649d1bba4
+# ╔═╡ f1d9de73-f543-458a-8407-4d7f4a3c6f80
 @plutoinclude "./context.jl" "all"
 
-# ╔═╡ b30f2165-0980-42c9-a3cf-e36033083a2a
-md"# Line"
+# ╔═╡ 93583c73-3027-4aec-b263-34d49805c4ed
+md"# Bars"
 
-# ╔═╡ cf44495e-6bb9-456b-bcd5-a06b7b6e2d0e
+# ╔═╡ 6f6c6f25-294a-426a-a809-0e533fc17430
 md"## Structure"
 
-# ╔═╡ 5984fc30-37d1-4e6d-beab-2233c928173d
+# ╔═╡ c9484aae-763d-4bf0-9f78-8804c4967891
+const type_union = Union{String, Real}
+
+# ╔═╡ d6c039ff-23eb-4e0b-a5e2-2d18296da421
 begin
-  struct Line <: D3Component
-    data       :: Vector{NamedTuple{(:x, :y), Tuple{<:Real, <:Real}}}
+  struct Bars <: D3Component
+    data       :: Vector{NamedTuple{(:x, :y), Tuple{<:type_union, <:type_union}}}
 	attributes :: D3Attr
-	curveType  :: Curve
 	id         :: String
   end
 
-Line(x, y, id;
-        attributes=D3Attr(), curveType=Linear
-  ) = Line(
-	  [(x=x[i], y=y[i]) for i ∈ 1:length(x)],
-	  attributes,
-	  curveType,
-	  id
-  )
+function Bars(x::Vector{<:type_union}, y::Vector{<:type_union}, id::String; attributes=D3Attr())
+	return Bars([(x=x[i], y=y[i]) for i ∈ 1:length(x)], attributes, id)
+end
 end;
 
-# ╔═╡ e2ef20fd-ba3d-4c4b-9d1d-ea8f64a3b48d
-function Base.extrema(line::Line)
-	xs = (v -> v.x).(line.data)
+# ╔═╡ 1d37a584-a988-4aca-97ea-5732d24da861
+function Base.extrema(bars::Bars)
 	ys = (v -> v.y).(line.data)
-	return (minx=minimum(xs), miny=minimum(ys), maxx=maximum(xs), maxy=maximum(ys))
+	return (minx=0, miny=minimum(ys), maxx=length(bars.data), maxy=maximum(ys))
 end
 
-# ╔═╡ abec8fbc-e87e-484a-8386-f133d28eacab
+# ╔═╡ c8e12ad4-555b-4513-9c50-27f8074d1125
 md"## Javascript Snippet"
 
-# ╔═╡ 92161843-357d-47ac-8da3-27b134b22084
-Base.show(io::IO, m::MIME"text/javascript", line::Line) =
+# ╔═╡ c775bc28-9e65-448c-91a3-f89a572b4682
+Base.show(io::IO, m::MIME"text/javascript", bars::Bars) =
     show(io, m, @js """
 	line(
-		$(PublishToJS(line.data)),
+		$(PublishToJS(bars.data)),
 		ctx,
 		x_scale,
 		y_scale,
-		$(PublishToJS(to_named_tuple(line.attributes))),
-		$(line.id),
-		d3.$(line.curveType)
+		$(PublishToJS(to_named_tuple(bars.attributes))),
+		$(bars.id),
 	);
 	""")
 
-# ╔═╡ d68ffecb-be5c-487c-8e22-7851312e9aa7
-Base.show(io::IO, m::MIME"text/html", line::Line) =	show(io, m, @htl("""
-	<span id=$(line.id)>
-	<script id="preview-$(line.id)">
-	const { d3, line_standalone } = $(import_local_js(bundle_code));
+# ╔═╡ 75ce7f56-c772-4a94-9793-48e944632b3b
+Base.show(io::IO, m::MIME"text/html", bars::Bars) =	show(io, m, @htl("""
+	<span id=$(bars.id)>
+	<script id="preview-$(bars.id)">
+	const { d3, bar_standalone } = $(import_local_js(bundle_code));
 	const svg = this == null ? DOM.svg(600, 300) : this;
 	const s = this == null ? d3.select(svg) : this.s;
 
-	line_standalone(
-		$(PublishToJS(line.data)),
+	bar_standalone(
+		$(PublishToJS(bars.data)),
 		s,
-		$(PublishToJS(to_named_tuple(line.attributes))),
-		$(line.id),
-		d3.$(line.curveType)
+		$(PublishToJS(to_named_tuple(bars.attributes))),
+		$(bars.id),
 	);
 
 	const output = svg
@@ -101,78 +95,33 @@ Base.show(io::IO, m::MIME"text/html", line::Line) =	show(io, m, @htl("""
 	</span>
 """))
 
-# ╔═╡ ba53d4cc-b096-4fb8-86f3-ee8648c10cea
+# ╔═╡ 5fd37e33-6ea2-4435-8d10-66e22a5f9bdb
 md"# Example"
 
-# ╔═╡ 93677f4d-c031-4432-8705-56575e20515b
-@only_in_nb sz_ui = @bind sz Slider(0:30)
+# ╔═╡ f73e2794-216f-440f-918f-f548da0eda2f
+@bind word TextField(;default="Is this working?")
 
-# ╔═╡ 19a6176a-9a60-4e6c-86e0-38303bb78813
-@only_in_nb x = collect(0:sz+1);
+# ╔═╡ 2367ee3c-a764-490a-886e-d5a0c0f63fb3
+cmap = let
+	lword = lowercase.(word)
+	characters = lword |> unique
+	collect((c=string(c), n=length(filter(_c -> _c == c, lword))) for c ∈ characters)
+end;
 
-# ╔═╡ 99fdeb31-01b8-4be5-bb42-fcc4f2da91ef
-@only_in_nb y = vcat([1], [rand() for _ ∈ (1:sz+1)]);
+# ╔═╡ 60ec6196-c57c-4d89-878d-b0c25ffe2766
+@only_in_nb x = (p -> p.c).(cmap)
 
-# ╔═╡ 0a27990c-f78e-4e10-875c-bbb07a2712a6
-@only_in_nb @bind lineev line = Line(x, y, "line_id";
-	attributes=D3Attr(;
-		attr=(;
-			fill="none",
-			stroke="green",
-			var"stroke-width"="3.0"
-		),
-		events=["click", "mouseover", "mousemove"]
-	),
-	curveType=Linear
-)
+# ╔═╡ 853e58c4-0015-4c6c-aeb5-35ba4decb3fb
+@only_in_nb y = (p -> p.n).(cmap)
 
-# ╔═╡ 94478d85-7d0e-44e0-bf13-a8a84a2ad83d
-@only_in_nb ismissing(lineev) ? md"" : @htl("""
-	$([@htl("""<h4>$ev : $(descr["count"])</h4>""") for (ev, descr) ∈ lineev])
-""")
+# ╔═╡ 8387b82e-9c11-418b-a69e-d1d1d6a4000a
+@bind ev Bars(x, y, "line_id"; attributes=D3Attr(;attr=(;fill="green"), duration=100, events=["mouseover"]))
 
-# ╔═╡ 702c3e6a-938f-4619-87d6-9c0313402158
-@only_in_nb ctx = Context(
-	(;domain=[extrema(x)...], range=[0, 690]),
-	(;domain=[extrema(y)...], range=[0, 300]),
-	[line],
-	"ctx"
-);
+# ╔═╡ 1d079b60-43b9-4b67-a187-24653032b6c0
+ev
 
-# ╔═╡ 1cd9f10e-e995-451a-91d2-b97520ee96e3
-@only_in_nb begin
-	rows = 16
-	cols = 16
-	ctxs = []
-	rows_val = 1 / rows
-	cols_val = 1 / cols
-
-	row = Context(
-		(domain=[0, 0], range=[0, 690]),
-		(domain=[0, 0], range=[0, 300]),
-		[Scale(Restyle(ctx, 
-			D3Attr(;
-				style=(;
-					transform= i % 2 == 0 ? "scale(1, 1)" : "scale(-1, 1)",
-					stroke="rgb($(rand() * 255), $(rand() * 255), $(rand() * 255))"
-				)),
-			"restyle-$i"
-		), (i * cols_val, (i+1) * cols_val), (0.0, 1.0), "scale-$i") for i ∈ (0:cols-1)] |> vec,
-		"row"
-	);
-
-	Context(
-		(domain=[0, 0], range=[0, 690]),
-		(domain=[0, 0], range=[0, 600]),
-		[Scale(Restyle(row, 
-			D3Attr(;style=(;transform= i % 2 == 0 ? "scale(1, 1)" : "scale(1, -1)")),
-			"restyle-row-$i"
-		), (0.0, 1.0), (i * rows_val, (i+1) * rows_val), "scale-row-$i")
-			for i ∈ (0:rows-1)] |> vec,
-		"all";
-		drawAxis=false
-	)
-end
+# ╔═╡ 8d23d176-e311-4d62-926a-24aac41c0ab6
+Bars(y, x, "line_id";attributes=D3Attr(;attr=(;fill="red"), duration=500))
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -187,10 +136,10 @@ PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 [compat]
 AbstractPlutoDingetjes = "~1.1.4"
 Deno_jll = "~1.20.4"
-HypertextLiteral = "~0.9.3"
+HypertextLiteral = "~0.9.4"
 Parameters = "~0.12.3"
 PlutoDevMacros = "~0.4.5"
-PlutoUI = "~0.7.38"
+PlutoUI = "~0.7.39"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
@@ -217,9 +166,9 @@ uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
 
 [[deps.ColorTypes]]
 deps = ["FixedPointNumbers", "Random"]
-git-tree-sha1 = "024fe24d83e4a5bf5fc80501a314ce0d1aa35597"
+git-tree-sha1 = "eb7f0f8307f71fac7c606984ea5fb2817275d6e4"
 uuid = "3da002f7-5984-5a60-b8a6-cbb66c0b333f"
-version = "0.11.0"
+version = "0.11.4"
 
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -255,9 +204,10 @@ uuid = "47d2ed2b-36de-50cf-bf87-49c2cf4b8b91"
 version = "0.0.4"
 
 [[deps.HypertextLiteral]]
-git-tree-sha1 = "2b078b5a615c6c0396c77810d92ee8c6f470d238"
+deps = ["Tricks"]
+git-tree-sha1 = "c47c5fa4c5308f27ccaac35504858d8914e102f9"
 uuid = "ac1192a8-f4b3-4bfe-ba22-af5b92cd3ab2"
-version = "0.9.3"
+version = "0.9.4"
 
 [[deps.IOCapture]]
 deps = ["Logging", "Random"]
@@ -347,9 +297,9 @@ version = "0.12.3"
 
 [[deps.Parsers]]
 deps = ["Dates"]
-git-tree-sha1 = "1285416549ccfcdf0c50d4997a94331e88d68413"
+git-tree-sha1 = "0044b23da09b5608b4ecacb4e5e6c6332f833a7e"
 uuid = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
-version = "2.3.1"
+version = "2.3.2"
 
 [[deps.Pkg]]
 deps = ["Artifacts", "Dates", "Downloads", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "Serialization", "TOML", "Tar", "UUIDs", "p7zip_jll"]
@@ -363,15 +313,15 @@ version = "0.4.5"
 
 [[deps.PlutoUI]]
 deps = ["AbstractPlutoDingetjes", "Base64", "ColorTypes", "Dates", "Hyperscript", "HypertextLiteral", "IOCapture", "InteractiveUtils", "JSON", "Logging", "Markdown", "Random", "Reexport", "UUIDs"]
-git-tree-sha1 = "670e559e5c8e191ded66fa9ea89c97f10376bb4c"
+git-tree-sha1 = "8d1f54886b9037091edf146b517989fc4a09efec"
 uuid = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
-version = "0.7.38"
+version = "0.7.39"
 
 [[deps.Preferences]]
 deps = ["TOML"]
-git-tree-sha1 = "d3538e7f8a790dc8903519090857ef8e1283eecd"
+git-tree-sha1 = "47e5f437cc0e7ef2ce8406ce1e7e24d44915f88d"
 uuid = "21216c6a-2e73-6563-6e65-726566657250"
-version = "1.2.5"
+version = "1.3.0"
 
 [[deps.Printf]]
 deps = ["Unicode"]
@@ -425,6 +375,11 @@ uuid = "a4e569a6-e804-4fa4-b0f3-eef7a1d5b13e"
 deps = ["InteractiveUtils", "Logging", "Random", "Serialization"]
 uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
+[[deps.Tricks]]
+git-tree-sha1 = "6bac775f2d42a611cdfcd1fb217ee719630c4175"
+uuid = "410a4b4d-49e4-4fbc-ab6d-cb71b17b3775"
+version = "0.1.6"
+
 [[deps.UUIDs]]
 deps = ["Random", "SHA"]
 uuid = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
@@ -455,25 +410,26 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 """
 
 # ╔═╡ Cell order:
-# ╟─96869bca-d552-4212-bb4b-969e68d0a990
-# ╟─02c62a40-253e-49ef-8ea9-beb2cffe4196
-# ╠═8bbbffda-f8ed-4d4a-b56b-dd0e1327e4da
-# ╠═59597ab2-369e-4a9f-921a-d63649d1bba4
-# ╟─b30f2165-0980-42c9-a3cf-e36033083a2a
-# ╟─cf44495e-6bb9-456b-bcd5-a06b7b6e2d0e
-# ╠═5984fc30-37d1-4e6d-beab-2233c928173d
-# ╠═e2ef20fd-ba3d-4c4b-9d1d-ea8f64a3b48d
-# ╟─abec8fbc-e87e-484a-8386-f133d28eacab
-# ╠═92161843-357d-47ac-8da3-27b134b22084
-# ╠═d68ffecb-be5c-487c-8e22-7851312e9aa7
-# ╟─ba53d4cc-b096-4fb8-86f3-ee8648c10cea
-# ╠═fabe5948-4505-4b0d-b72d-1cd52e7d3064
-# ╠═19a6176a-9a60-4e6c-86e0-38303bb78813
-# ╠═99fdeb31-01b8-4be5-bb42-fcc4f2da91ef
-# ╟─94478d85-7d0e-44e0-bf13-a8a84a2ad83d
-# ╠═0a27990c-f78e-4e10-875c-bbb07a2712a6
-# ╠═702c3e6a-938f-4619-87d6-9c0313402158
-# ╟─1cd9f10e-e995-451a-91d2-b97520ee96e3
-# ╟─93677f4d-c031-4432-8705-56575e20515b
+# ╠═a4821b5e-41dc-4cf1-8a35-dfebe7d0fbbf
+# ╟─c6a687a8-16ff-43ea-833e-8dd058ebedf1
+# ╠═6e1e9ba6-6486-417b-97cc-127a137eb59d
+# ╠═f1d9de73-f543-458a-8407-4d7f4a3c6f80
+# ╟─93583c73-3027-4aec-b263-34d49805c4ed
+# ╟─6f6c6f25-294a-426a-a809-0e533fc17430
+# ╠═c9484aae-763d-4bf0-9f78-8804c4967891
+# ╠═d6c039ff-23eb-4e0b-a5e2-2d18296da421
+# ╠═1d37a584-a988-4aca-97ea-5732d24da861
+# ╟─c8e12ad4-555b-4513-9c50-27f8074d1125
+# ╠═c775bc28-9e65-448c-91a3-f89a572b4682
+# ╠═75ce7f56-c772-4a94-9793-48e944632b3b
+# ╟─5fd37e33-6ea2-4435-8d10-66e22a5f9bdb
+# ╠═f5754764-6985-48a0-881f-593e5a4bedd8
+# ╟─2367ee3c-a764-490a-886e-d5a0c0f63fb3
+# ╟─f73e2794-216f-440f-918f-f548da0eda2f
+# ╠═60ec6196-c57c-4d89-878d-b0c25ffe2766
+# ╠═853e58c4-0015-4c6c-aeb5-35ba4decb3fb
+# ╠═1d079b60-43b9-4b67-a187-24653032b6c0
+# ╠═8387b82e-9c11-418b-a69e-d1d1d6a4000a
+# ╠═8d23d176-e311-4d62-926a-24aac41c0ab6
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

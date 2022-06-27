@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@types/d3": "^7.4.0"
+  }
+}

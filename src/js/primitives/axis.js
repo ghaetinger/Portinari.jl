@@ -8,8 +8,9 @@ export function axis(parent_component, direction, x_scale, y_scale, attributes, 
     draw_axis(parent_component, scale, axis_position, class_name, attributes);
 }
 
-export function x_axis(parent_component, domain, range, id, show=false) {
-  const x_scale = d3.scaleLinear()
+export function x_axis(parent_component, domain, range, id, show=false, band_gap=0.2) {
+  const scale = typeof(domain[0]) == "string" ? d3.scaleBand().padding(band_gap) : d3.scaleLinear();
+  const x_scale = scale
                   .domain(domain)
                   .range(range);
 
@@ -21,8 +22,9 @@ export function x_axis(parent_component, domain, range, id, show=false) {
 }
 
 
-export function y_axis(parent_component, domain, range, id, show=false) {
-  const y_scale = d3.scaleLinear()
+export function y_axis(parent_component, domain, range, id, show=false, band_gap=0.2) {
+  const scale = typeof(domain[0]) == "string" ? d3.scaleBand().padding(band_gap) : d3.scaleLinear();
+  const y_scale = scale
                   .domain(domain)
                   .range(range);
 
