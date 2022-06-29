@@ -1,7 +1,7 @@
 name = "Portinari"
 uuid = "72ee7ba2-92b2-4971-a97d-28f521fe8910"
 authors = ["Guilherme Haetinger <ghaetinger@gmail.com>"]
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 AbstractPlutoDingetjes = "6e696c72-6542-2067-7265-42206c756150"
