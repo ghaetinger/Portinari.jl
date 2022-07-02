@@ -99,10 +99,10 @@ Base.show(io::IO, m::MIME"text/html", bars::Bars) =	show(io, m, @htl("""
 md"# Example"
 
 # ╔═╡ f73e2794-216f-440f-918f-f548da0eda2f
-@bind word TextField(;default="Is this working?")
+@only_in_nb @bind word TextField(;default="Is this working?")
 
 # ╔═╡ 2367ee3c-a764-490a-886e-d5a0c0f63fb3
-cmap = let
+@only_in_nb cmap = let
 	lword = lowercase.(word)
 	characters = lword |> unique
 	collect((c=string(c), n=length(filter(_c -> _c == c, lword))) for c ∈ characters)
@@ -115,13 +115,13 @@ end;
 @only_in_nb y = (p -> p.n).(cmap)
 
 # ╔═╡ 8387b82e-9c11-418b-a69e-d1d1d6a4000a
-@bind ev Bars(x, y, "line_id"; attributes=D3Attr(;attr=(;fill="green"), duration=100, events=["mouseover"]))
+@only_in_nb @bind ev Bars(x, y, "line_id"; attributes=D3Attr(;attr=(;fill="green"), duration=100, events=["mouseover"]))
 
 # ╔═╡ 1d079b60-43b9-4b67-a187-24653032b6c0
-ev
+@only_in_nb ev
 
 # ╔═╡ 8d23d176-e311-4d62-926a-24aac41c0ab6
-Bars(y, x, "line_id";attributes=D3Attr(;attr=(;fill="red"), duration=500))
+@only_in_nb Bars(y, x, "line_id";attributes=D3Attr(;attr=(;fill="red"), duration=500))
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
