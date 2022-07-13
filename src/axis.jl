@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.5
+# v0.19.9
 
 using Markdown
 using InteractiveUtils
@@ -73,6 +73,18 @@ Base.show(io::IO, m::MIME"text/html", axis::Axis) =	show(io, m, @htl("""
 <b style="color: red">You should try rendering axis with other things</b>
 """))
 
+# ╔═╡ c058bda1-81f8-48d5-a643-86e58eccb88c
+Context(
+	(;domain=[-3, 3], range=[100, 200]),
+	(;domain=[-4, 4], range=[20, 200]),
+	[Axis(Right, "y"),
+	Axis(Bottom, "x")],
+	D3Attr(),
+	(0, 1),
+	(0, 1),
+	"abc", false
+)
+
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
@@ -96,7 +108,7 @@ PlutoUI = "~0.7.39"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.7.3"
+julia_version = "1.7.2"
 manifest_format = "2.0"
 
 [[deps.AbstractPlutoDingetjes]]
@@ -135,11 +147,8 @@ uuid = "04572ae6-984a-583e-9378-9577a1c2574d"
 version = "1.20.4+0"
 
 [[deps.Downloads]]
-deps = ["ArgTools", "FileWatching", "LibCURL", "NetworkOptions"]
+deps = ["ArgTools", "LibCURL", "NetworkOptions"]
 uuid = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
-
-[[deps.FileWatching]]
-uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
 
 [[deps.FixedPointNumbers]]
 deps = ["Statistics"]
@@ -373,5 +382,6 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╟─c13a4acc-dd77-4c91-b408-c68cea240684
 # ╠═88d1881f-1865-4c46-ac50-5e26eacb46d6
 # ╠═25e92ec2-eaf2-46ba-8ec7-83fe19d2b9f1
+# ╠═c058bda1-81f8-48d5-a643-86e58eccb88c
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

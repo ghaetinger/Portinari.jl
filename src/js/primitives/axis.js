@@ -2,7 +2,7 @@ import { d3 } from '../d3-import.js';
 import { splice_attributes } from '../attribute_splicing.js';
 
 export function axis(parent_component, direction, x_scale, y_scale, attributes, id) {
-    const scale = direction in ['Left', 'Right'] ? y_scale : x_scale;
+    const scale =  ['Left', 'Right'].includes(direction) ? y_scale : x_scale;
     const class_name = `axis-${id}`;
     const axis_position = d3[`axis${direction}`];
     draw_axis(parent_component, scale, axis_position, class_name, attributes);
